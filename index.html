@@ -1,0 +1,1812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The ODU Trail</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: 'VT323', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-size: 20px;
+            overflow: hidden;
+            user-select: none; 
+        }
+
+        #game-container {
+            width: 1100px; 
+            height: 700px; 
+            border: 4px solid #fff;
+            display: flex;
+            flex-direction: column;
+            background-color: #000;
+            position: relative;
+        }
+
+        /* PIXEL TEXT AND ELEMENTS FOR MODALS */
+        .pixel-h2 { color: #FFFF00; font-size: 32px; font-weight: normal; margin-top: 0; }
+        .pixel-p { font-size: 24px; color: #fff; margin-bottom: 20px; text-align: center; }
+        .pixel-bonus { font-size: 22px; color: #FFFF00; font-weight: normal; margin-bottom: 20px; display: none; text-align: center; }
+
+        /* START MENU SCREEN */
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #start-screen h1 {
+            color: #FFFF00;
+            font-size: 44px;
+            margin-bottom: 10px;
+            margin-top: 10px;
+        }
+
+        .menu-container {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: stretch;
+            gap: 20px;
+            width: 95%;
+            margin-top: 20px;
+        }
+
+        .menu-tile {
+            background-color: #000;
+            color: #00FF00;
+            border: 2px dashed #00FF00;
+            font-family: 'VT323', monospace;
+            padding: 15px;
+            cursor: pointer;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .menu-tile:hover {
+            background-color: #00FF00;
+            color: #000;
+        }
+
+        .menu-tile h2 {
+            margin-top: 0;
+            font-size: 26px;
+            color: #FFFF00;
+            margin-bottom: 10px;
+        }
+
+        .menu-tile:hover h2, .menu-tile:hover .tile-stat, .menu-tile:hover .tile-obj {
+            color: #000 !important;
+        }
+
+        .tile-stat {
+            font-size: 18px;
+            color: #ccc;
+            margin: 2px 0;
+            width: 100%;
+        }
+
+        .tile-obj {
+            margin-top: 10px;
+            font-size: 18px;
+            color: #fff;
+            border-top: 1px dashed #555;
+            padding-top: 10px;
+        }
+        .menu-tile:hover .tile-obj {
+            border-top: 1px dashed #000;
+        }
+
+        /* INSTRUCTIONS SCREEN */
+        #instructions-screen {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            z-index: 10;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #instructions-screen h1 {
+            color: #FFFF00;
+            font-size: 40px;
+            margin: 0 0 15px 0;
+            text-align: center;
+        }
+
+        .instructions-content {
+            width: 90%;
+            max-height: 520px;
+            overflow-y: auto;
+            border: 2px dashed #555;
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: left;
+            line-height: 1.3;
+        }
+
+        .instructions-content h2 {
+            color: #00FF00;
+            font-size: 28px;
+            margin-top: 0;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #555;
+            padding-bottom: 5px;
+        }
+
+        .instructions-content h3 {
+            color: #FFFF00;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .instructions-content ul {
+            margin-top: 5px;
+            margin-bottom: 15px;
+            padding-left: 25px;
+        }
+
+        .instructions-content li {
+            margin-bottom: 8px;
+        }
+
+        /* MAIN GAME UI */
+        #main-game {
+            display: none; 
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+            position: relative;
+        }
+
+        #top-screen {
+            height: 60%;
+            border-bottom: 4px solid #fff;
+            display: flex;
+            background-color: #0000AA; 
+            color: #fff;
+            box-sizing: border-box;
+        }
+
+        #viewport {
+            flex: 1.5; 
+            padding: 0;
+            border-right: 4px solid #fff;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+            background-color: #87CEEB; /* default sky blue */
+        }
+        
+        #travel-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+        }
+
+        #viewport-ui {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+            pointer-events: none; 
+        }
+
+        #location-display {
+            margin: 0;
+            text-shadow: 2px 2px 0 #000;
+            color: #FFFF00;
+        }
+        #program-name-display {
+            margin: 5px 0 0 0;
+            font-size: 24px;
+            text-shadow: 2px 2px 0 #000;
+            color: #FFF;
+        }
+
+        #stats-panel {
+            flex: 1; 
+            padding: 15px;
+            line-height: 1.2;
+            box-sizing: border-box;
+            overflow-y: auto;
+            position: relative;
+            font-size: 22px; 
+            background-color: #0000AA;
+        }
+
+        #stats-panel h3 {
+            margin-top: 0;
+            margin-bottom: 8px;
+            color: #FFFF00;
+            font-size: 24px;
+        }
+
+        .buyin-scale {
+            margin-top: 15px;
+            font-size: 18px;
+            color: #00FF00;
+            border-top: 1px dashed #555;
+            padding-top: 10px;
+        }
+
+        #bottom-screen {
+            height: 40%;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        #text-log {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px dashed #555;
+            color: #00FF00;
+            font-size: 22px;
+        }
+
+        #controls {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding-top: 15px;
+            border-top: 1px dashed #555;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .divider {
+            width: 2px;
+            height: 35px;
+            background-color: #fff;
+            margin: 0 10px;
+        }
+
+        .game-btn, .game-select {
+            background-color: #000;
+            color: #fff;
+            border: 2px solid #fff;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            padding: 6px 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        .game-select {
+            color: #FFFF00;
+        }
+
+        .game-btn:hover {
+            background-color: #fff;
+            color: #000;
+        }
+
+        .game-btn:disabled, .game-select:disabled {
+            border-color: #555;
+            color: #555;
+            cursor: not-allowed;
+        }
+
+        .play-again-btn {
+            background-color: #00FF00;
+            color: #000;
+            border: 2px solid #fff;
+            font-family: 'VT323', monospace;
+            font-size: 22px;
+            padding: 8px 16px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        .play-again-btn:hover {
+            background-color: #fff;
+            color: #000;
+        }
+
+        /* MODALS */
+        .modal-overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            z-index: 100;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            width: 60%; 
+            background-color: #000; 
+            border: 4px solid #FFF; 
+            padding: 20px;
+            box-sizing: border-box;
+            color: #FFF;
+            text-align: center;
+        }
+
+        .modal-btn {
+            background-color: #000;
+            color: #FFF;
+            border: 2px solid #FFF;
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            padding: 10px;
+            margin-top: 10px;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+        }
+
+        .modal-btn:hover {
+            background-color: #FFFF00;
+            color: #000;
+            border-color: #FFFF00;
+        }
+
+        /* INSTRUCTION MODAL SPECIFIC */
+        #instruction-modal .modal-content {
+            background-color: #0000AA;
+            border-color: #00FF00;
+            width: 65%;
+        }
+        #instruction-modal .start-btn {
+            background-color: #00FF00;
+            color: #000;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        #instruction-modal .start-btn:hover {
+            background-color: #FFF;
+        }
+
+        /* NETWORKING MINI-GAME MODAL */
+        #minigame-modal {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            z-index: 150;
+            flex-direction: column;
+        }
+
+        #mg-header {
+            height: 60px;
+            background-color: #000;
+            border-bottom: 4px solid #FFF;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 28px;
+            color: #FFF;
+            font-family: 'VT323', monospace;
+        }
+
+        #mg-canvas {
+            background-color: #000;
+            align-self: center;
+            cursor: crosshair;
+        }
+
+        /* VISUAL NOVEL SCREEN FOR TOWN HALL */
+        #vn-modal {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            z-index: 200;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+            border: 4px solid #fff;
+        }
+
+        #vn-header {
+            color: #FFFF00;
+            font-size: 36px;
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px dashed #555;
+            padding-bottom: 10px;
+        }
+
+        #vn-narrative {
+            font-size: 26px;
+            color: #FFF;
+            flex: 1;
+            margin-bottom: 20px;
+            overflow-y: auto;
+            line-height: 1.4;
+            padding: 15px;
+            background: rgba(0,0,0,0.8);
+            border: 1px solid #aaa;
+        }
+
+        #vn-controls {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: stretch;
+            gap: 20px;
+            margin-top: auto;
+            border-top: 2px dashed #555;
+            padding-top: 20px;
+        }
+
+        .vn-btn {
+            background-color: #000;
+            color: #00FF00;
+            border: 2px dashed #00FF00;
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            padding: 15px;
+            cursor: pointer;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            flex: 1;
+            transition: all 0.2s;
+        }
+
+        .vn-btn:hover {
+            background-color: #00FF00;
+            color: #000;
+        }
+
+        .vn-btn-effect {
+            margin-top: 15px;
+            font-size: 18px;
+            border-top: 1px dashed #555;
+            padding-top: 10px;
+            width: 100%;
+        }
+
+        .vn-btn:hover .vn-btn-effect {
+            border-top: 1px dashed #000;
+        }
+
+        #vn-modal::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,100,0.6);
+            z-index: -1;
+        }
+        
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        
+        <div id="start-screen">
+            <div style="margin-bottom: 10px;">
+                <svg width="180" height="80" viewBox="0 0 160 70" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M 10 15 L 110 15 L 135 35 L 135 60 L 10 60 Z" fill="#fff" />
+                    <polygon points="112,18 128,35 112,35 Z" fill="#000" />
+                    <rect x="90" y="18" width="20" height="17" fill="#000" />
+                    <text x="50" y="45" font-family="'VT323', monospace" font-size="34" fill="#000" font-weight="bold">MO</text>
+                    <circle cx="35" cy="60" r="10" fill="#000" stroke="#fff" stroke-width="2"/>
+                    <circle cx="105" cy="60" r="10" fill="#000" stroke="#fff" stroke-width="2"/>
+                </svg>
+            </div>
+            
+            <h1 style="margin-top:0;">The ODU Trail</h1>
+            <p style="padding: 0 40px; margin-bottom: 0;">Fiscal Year 2026-2027<br>You have 1 year to get your program started, running efficiently, and serving the community while staying within budget! Can you survive, THE ODU TRAIL?</p>
+            
+            <div class="menu-container">
+                <button class="menu-tile" onclick="showInstructions('Healthy Homes')">
+                    <h2>Healthy Homes</h2>
+                    <div class="tile-stat">Budget: $50,000</div>
+                    <div class="tile-stat">Overhead: $1,600/rnd</div>
+                    <div class="tile-stat">Effectiveness: 50%</div>
+                    <div class="tile-stat">Buy-In: 50 (Receptive)</div>
+                    <div class="tile-stat">Alignment: 50%</div>
+                    <div class="tile-obj"><b>Objective:</b><br>Survive and pass 3/5 metrics on the Annual Evaluation.</div>
+                </button>
+
+                <button class="menu-tile" onclick="showInstructions('Youth Mental Health')">
+                    <h2>Youth Mental Health</h2>
+                    <div class="tile-stat">Budget: $50,000</div>
+                    <div class="tile-stat">Overhead: $1,600/rnd</div>
+                    <div class="tile-stat">Effectiveness: 50%</div>
+                    <div class="tile-stat">Buy-In: 50 (Receptive)</div>
+                    <div class="tile-stat">Alignment: 50%</div>
+                    <div class="tile-obj"><b>Special Objective:</b><br>End the year with Rural Buy-In at Championed (80+).</div>
+                </button>
+
+                <button class="menu-tile" onclick="showInstructions('Harm Reduction')">
+                    <h2>Mobile Harm Reduction</h2>
+                    <div class="tile-stat">Budget: $50,000</div>
+                    <div class="tile-stat">Overhead: $1,600/rnd</div>
+                    <div class="tile-stat">Effectiveness: 50%</div>
+                    <div class="tile-stat">Buy-In: 50 (Receptive)</div>
+                    <div class="tile-stat">Alignment: 50%</div>
+                    <div class="tile-obj"><b>Special Objective:</b><br>Secure the Max $10k Alignment Bonus at least 3 times.</div>
+                </button>
+            </div>
+        </div>
+
+        <div id="instructions-screen">
+            <h1>HOW TO PLAY</h1>
+            <div class="instructions-content">
+                <h2>YOUR GOALS</h2>
+                <ul>
+                    <li>Achieve high Community Buy-In (Overall and across all 4 Area Types).</li>
+                    <li>Maintain high Strategic Alignment and Program Effectiveness.</li>
+                    <li>End the fiscal year with as much surplus budget as possible.</li>
+                    <li>Ensure equitable service by visiting all Area Types (Urban, Suburban, Rural, Frontier).</li>
+                    <li>Pass your specific Program Objective to ensure renewal!</li>
+                </ul>
+
+                <h2>ACTIONS & UI</h2>
+                <p>Use the bottom control panel to take turns. Each action advances time by 2 weeks (1 round).</p>
+                
+                <h3>1. DEPLOY VAN (Field Work)</h3>
+                <p style="margin-top:0;">Select a destination city and an activity, then click Deploy. Costs Fuel + Activity Fee.</p>
+                <ul>
+                    <li><b>Town Hall (buy-in):</b> Increases Buy-In via narrative choices. Costs $1,500 + Fuel.</li>
+                    <li><b>Direct Service (effectiveness):</b> Action minigame for Effectiveness. Grants base +5 Local Buy-In. Costs $1,000 + Fuel.</li>
+                    <li><b>Meet with CBOs (alignment):</b> Action minigame for Alignment. Grants base +5 Local Buy-In. Costs $400 + Fuel.</li>
+                </ul>
+
+                <h3>2. ENGAGE ODU (Administration)</h3>
+                <p style="margin-top:0;">Travel to the PSB to boost your program. Costs $3,000 flat.</p>
+                <ul>
+                    <li><b>Analyze Data (EPIs):</b> Identifies targeted city/action combos that yield a +10 Buy-In bonus for the next 2 rounds.</li>
+                    <li><b>PM / QI:</b> Permanently reduces overhead burn rate by 20% AND adds +1 to ALL minigame points and Town Hall rewards!</li>
+                    <li><b>Strategic Alignment:</b> Instantly boosts Alignment by 30% AND permanently raises the max score cap of all minigames by +2!</li>
+                </ul>
+
+                <h2>PERFORMANCE CHECKS</h2>
+                <ul>
+                    <li><b>Bi-Monthly Check (Every 4 rounds/8 weeks):</b> If Buy-In is &lt; 60, you lose Effectiveness. If Alignment is High (60%+ or 85%+), you earn $5,000 or $10,000 in bonus funding!</li>
+                    <li><b>Annual Evaluation (Round 24):</b> You must pass 3 of 5 core criteria PLUS your program's Special Objective to win.</li>
+                </ul>
+            </div>
+            <button class="play-again-btn" style="margin-top: 20px;" onclick="startGame()">START TRAIL</button>
+        </div>
+
+        <div id="main-game">
+            <div id="top-screen">
+                <div id="viewport">
+                    <canvas id="travel-canvas" width="660" height="420"></canvas>
+                    <div id="viewport-ui">
+                        <h1 id="location-display">Location: Oregon City</h1>
+                        <p id="program-name-display">Program Selected</p>
+                    </div>
+                </div>
+                <div id="stats-panel">
+                    <h3>Program Status</h3>
+                    Round: <span id="stat-turn">1</span> / 24 <span style="font-size: 18px; color: #ccc;">(Weeks <span id="stat-weeks">1-2</span>)</span><br>
+                    Budget: $<span id="stat-budget">0</span><br>
+                    Overhead: $<span id="stat-burnrate">0</span>/rnd <span style="font-size: 18px; color: #ccc;">(ODU Savings: $<span id="stat-odu-savings">0</span>/rnd)</span><br>
+                    Miles Traveled: <span id="stat-miles">0</span><br>
+                    Effectiveness: <span id="stat-effectiveness" style="color: #00FF00;">100%</span><br>
+                    Strategic Alignment: <span id="stat-strategic" style="color: #00FF00;">100%</span> 
+                    <div style="font-size: 16px; margin-left: 10px; margin-bottom: 5px; color: #ccc; line-height: 1;">
+                        <i>Bonus Targets: 60% ($5k) / 85% ($10k)</i>
+                    </div>
+                    Overall Buy-In: <span id="stat-buyin">80 (Championed)</span><br>
+                    <div style="font-size: 18px; margin-left: 10px; margin-top: 5px; line-height: 1.2; font-weight: normal;">
+                        <span id="stat-bi-urb">Urban: 80</span> | <span id="stat-bi-sub">Suburban: 80</span><br>
+                        <span id="stat-bi-rur">Rural: 80</span> | <span id="stat-bi-fro">Frontier: 80</span>
+                    </div>
+                    <br>
+                    <h3>ODU Bonuses</h3>
+                    <table style="width:100%; text-align:left; font-size:18px; border-collapse: collapse; margin-bottom: 10px;">
+                        <tr style="border-bottom: 1px dashed #555; color: #FFFF00;">
+                            <th style="padding-bottom:5px;">Service</th><th style="padding-bottom:5px; text-align:center;">Engaged</th><th style="padding-bottom:5px; text-align:center;">Bonus Earned</th>
+                        </tr>
+                        <tr>
+                            <td style="padding-top:5px;">Analyze Data (EPIs)</td><td id="stat-epi-count" style="padding-top:5px; text-align:center;">0</td><td id="stat-epi-bonus" style="padding-top:5px; text-align:center;">0</td>
+                        </tr>
+                        <tr>
+                            <td>PM/QI</td><td id="stat-pm-count" style="text-align:center;">0</td><td id="stat-pm-bonus" style="text-align:center;">0</td>
+                        </tr>
+                        <tr>
+                            <td>Strategic Alignment</td><td id="stat-strat-count" style="text-align:center;">0</td><td id="stat-strat-bonus" style="text-align:center;">0</td>
+                        </tr>
+                    </table>
+                    
+                    <div class="buyin-scale">
+                        <b>Buy-In Scale Legend:</b><br>
+                        <span style="color: #00FF00;">80+ : Championed</span><br>
+                        <span style="color: #00FFFF;">50-79 : Receptive</span><br>
+                        <span style="color: #FFAA00;">20-49 : Skeptical</span><br>
+                        <span style="color: #FF5555;">0-19 : Hostile / Rejected</span>
+                    </div>
+                </div>
+            </div>
+            <div id="bottom-screen">
+                <div id="text-log">
+                    > Welcome to The ODU Trail. The 24-round (48-week) fiscal year has begun!
+                </div>
+                
+                <div id="controls">
+                    <div class="control-group">
+                        <select id="city-select" class="game-select" onchange="updateDeployCostDisplay()">
+                            <option value="Barlow">Barlow (Frontier)</option>
+                            <option value="Beavercreek">Beavercreek (Rural)</option>
+                            <option value="Boring">Boring (Rural)</option>
+                            <option value="Canby">Canby (Suburban)</option>
+                            <option value="Damascus">Damascus (Rural)</option>
+                            <option value="Estacada">Estacada (Rural)</option>
+                            <option value="Gladstone">Gladstone (Suburban)</option>
+                            <option value="Happy Valley">Happy Valley (Suburban)</option>
+                            <option value="Jennings Lodge" selected>Jennings Lodge (Suburban)</option>
+                            <option value="Johnson City">Johnson City (Suburban)</option>
+                            <option value="Lake Oswego">Lake Oswego (Urban)</option>
+                            <option value="Milwaukie">Milwaukie (Urban)</option>
+                            <option value="Molalla">Molalla (Rural)</option>
+                            <option value="Mulino">Mulino (Rural)</option>
+                            <option value="Oak Grove">Oak Grove (Suburban)</option>
+                            <option value="Oregon City">Oregon City (Urban)</option>
+                            <option value="Portland">Portland (Urban)</option>
+                            <option value="Rhododendron">Rhododendron (Frontier)</option>
+                            <option value="Rivergrove">Rivergrove (Suburban)</option>
+                            <option value="Sandy">Sandy (Rural)</option>
+                            <option value="Stafford">Stafford (Rural)</option>
+                            <option value="Tualatin">Tualatin (Suburban)</option>
+                            <option value="West Linn">West Linn (Suburban)</option>
+                            <option value="Wilsonville">Wilsonville (Suburban)</option>
+                        </select>
+                        
+                        <select id="activity-select" class="game-select" onchange="updateDeployCostDisplay()">
+                            <option value="town_hall">Town Hall (buy-in)</option>
+                            <option value="direct_service">Direct Service (effectiveness)</option>
+                            <option value="cbo_meet">Meet with CBOs (alignment)</option>
+                        </select>
+
+                        <button id="btn-travel" class="game-btn" onclick="deployVan()">Deploy Van</button>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="control-group">
+                        <select id="odu-select" class="game-select">
+                            <option value="epi">Analyze Data (EPIs)</option>
+                            <option value="pm">PM / QI</option>
+                            <option value="strat">Strategic Alignment</option>
+                        </select>
+                        <button id="btn-odu" class="game-btn" onclick="engageODU()">Engage ODU ($3K)</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="instruction-modal" class="modal-overlay">
+                <div class="modal-content">
+                    <h2 id="inst-title" class="pixel-h2">MINIGAME TITLE</h2>
+                    <div id="inst-desc" class="pixel-p" style="font-size: 22px;">Description goes here.</div>
+                    <p id="inst-pm-bonus" class="pixel-bonus" style="font-size: 20px;">PM/QI Bonus Engaged! Max score ceiling increased!</p>
+                    <button id="btn-start-minigame" class="modal-btn start-btn" onclick="executeMinigameStart()">START ACTION</button>
+                </div>
+            </div>
+
+            <div id="minigame-modal">
+                <div id="mg-header">
+                    <span id="mg-hud-title">CBO NETWORKING EVENT</span>
+                    <span>Time: <span id="mg-time" style="color: #FFFF00;">15</span>s</span>
+                    <span>Score: <span id="mg-score" style="color: #00FF00;">0</span> <span id="mg-max-display" style="font-size: 20px;">/ 20</span></span>
+                </div>
+                <canvas id="mg-canvas" width="1100" height="640"></canvas>
+            </div>
+
+            <div id="vn-modal">
+                <div id="vn-header">TOWN HALL - OREGON CITY</div>
+                <div id="vn-narrative">> Dialogue or scenario text here.</div>
+                <div id="vn-controls">
+                    <button class="vn-btn" onclick="handleVNDecision(0)">Option 1</button>
+                    <button class="vn-btn" onclick="handleVNDecision(1)">Option 2</button>
+                    <button class="vn-btn" onclick="handleVNDecision(2)">Option 3</button>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        const cityData = {
+            "Barlow": { dist: 12, density: "Frontier" }, 
+            "Beavercreek": { dist: 6, density: "Rural" }, 
+            "Boring": { dist: 18, density: "Rural" }, 
+            "Canby": { dist: 9, density: "Suburban" },
+            "Damascus": { dist: 12, density: "Rural" }, 
+            "Estacada": { dist: 22, density: "Rural" }, 
+            "Gladstone": { dist: 2, density: "Suburban" }, 
+            "Happy Valley": { dist: 10, density: "Suburban" },
+            "Jennings Lodge": { dist: 4, density: "Suburban" }, 
+            "Johnson City": { dist: 5, density: "Suburban" }, 
+            "Lake Oswego": { dist: 8, density: "Urban" },
+            "Milwaukie": { dist: 8, density: "Urban" }, 
+            "Molalla": { dist: 15, density: "Rural" }, 
+            "Mulino": { dist: 10, density: "Rural" }, 
+            "Oak Grove": { dist: 6, density: "Suburban" },
+            "Oregon City": { dist: 2, density: "Urban" }, 
+            "Portland": { dist: 14, density: "Urban" }, 
+            "Rhododendron": { dist: 45, density: "Frontier" }, 
+            "Rivergrove": { dist: 9, density: "Suburban" },
+            "Sandy": { dist: 24, density: "Rural" }, 
+            "Stafford": { dist: 7, density: "Rural" }, 
+            "Tualatin": { dist: 12, density: "Suburban" }, 
+            "West Linn": { dist: 2, density: "Suburban" }, 
+            "Wilsonville": { dist: 14, density: "Suburban" }
+        };
+
+        const wooQuotes = [
+            "Nice to meet you!", "I love your shoes!", "Networking Pro!",
+            "I AM WOO!", "Great to connect!", "Let's touch base!",
+            "Here is my card!", "Love the synergy!", "Let's circle back!",
+            "Awesome initiative!", "We should collaborate!"
+        ];
+
+        // --- 18 VISUAL NOVEL TOWN HALL SCENARIOS (3 ACT STRUCTURE) ---
+        const thSetup = [
+            { dialogue: "You are setting up for your keynote address. There are 5 minutes before you begin. Suddenly, the venue's master projector won't connect and the presentation laptop is dead!", options: [ { text: "Pay for emergency, high-level A/V tech support to rush over and fix the connection immediately.", cost: 400 }, { text: "Compensate the local CBO hosting the event to step in and let you use their backup projector.", cost2: 150 }, { text: "Pass around a bucket and say you can't start until you raise $1000 for a new laptop." } ] },
+            { dialogue: "The mobile DJ speakers you set up for the outdoor town hall are causing massive feedback and screeching right as the crowd begins to arrive!", options: [ { text: "Pay a local sound engineer to rush over and fix the mix.", cost: 300 }, { text: "Compensate the neighborhood youth center's A/V club to run the soundboard for you.", cost2: 100 }, { text: "Sell 'VIP Earplug Packages' for $1000 to attendees to block out the screeching." } ] },
+            { dialogue: "You are setting up the catering area. Just as doors open, a power surge in the venue causes the incentive meal warmers to fail completely.", options: [ { text: "Spend funds on a rush delivery of hot, catered meals from a local business.", cost: 500 }, { text: "Compensate a local mutual aid group to bring their community crockpots to save the day.", cost2: 200 }, { text: "Auction off the few remaining cold sandwiches to the highest bidders, raising $1000." } ] },
+            { dialogue: "The community center double-booked your room with a highly competitive youth basketball tournament!", options: [ { text: "Pay to quickly rent the adjacent premium outdoor tent.", cost: 400 }, { text: "Compensate the youth basketball league to co-host the space as a joint health-and-sports event.", cost2: 250 }, { text: "Charge the basketball parents a $1000 'convenience fee' to let them keep playing." } ] },
+            { dialogue: "A sudden Pacific Northwest downpour floods the town hall parking lot right before the doors open!", options: [ { text: "Spend funds on emergency canopies and umbrellas for the attendees.", cost: 500 }, { text: "Compensate the community center to cover cleanup fees and move the meeting into their dry gymnasium.", cost2: 150 }, { text: "Charge attendees a $1000 'ferry fee' to carry them across the puddles on your back." } ] },
+            { dialogue: "Someone walked off with the entire table of incentive snacks just as the doors opened!", options: [ { text: "Spend funds on premium catering replacements.", cost: 600 }, { text: "Compensate the neighborhood food pantry to distribute fresh produce boxes instead.", cost2: 300 }, { text: "Turn it into a telethon and refuse to open the doors until the crowd donates $1000." } ] }
+        ];
+
+        const thPres = [
+            { dialogue: "You are presenting the program's data. Suddenly, a prominent local heckler starts loudly discrediting the health department with bizarre conspiracy theories.", options: [ { text: "Spend money on high-value gift card giveaways right now to immediately distract the crowd.", cost: 500 }, { text: "Compensate community leaders to co-present the slide deck to show united partnership.", cost2: 250 }, { text: "Offer to let the heckler take the stage if they pay a $1000 'guest speaker' fee." } ] },
+            { dialogue: "A high-profile visiting official keeps taking over the microphone and confusing the audience. They are loudly calling your staff 'Jedi' and making confusing speeches about 'redemption arcs'.", options: [ { text: "Pay for impromptu catering deliverables to distract the crowd from the awkward speech.", cost: 200 }, { text: "Compensate a respected CBO director to take the mic and translate the official's jargon into community terms.", cost2: 200 }, { text: "Charge the official a $1000 fine for extending their speaking time." } ] },
+            { dialogue: "You notice the crowd is falling asleep during a dense presentation on population metrics and strategic indicators.", options: [ { text: "Pay to activate a premium live-polling software to engage the audience.", cost: 300 }, { text: "Compensate local storytellers to share lived experiences alongside the data.", cost2: 300 }, { text: "Pass around a tip jar, insisting you need $1000 to afford better presentation slides." } ] },
+            { dialogue: "An interactive presentation component requires community input. A local leader complains you are misrepresenting the data for their area to fit county goals, halting the presentation.", options: [ { text: "Offer a budget allocation for the leader's group to fund their preferred local data initiative.", cost: 750 }, { text: "Fund the neighborhood coalition to directly validate the data against their block-level surveys.", cost2: 400 }, { text: "Offer to change the data to whatever they want if they 'donate' $1000 to the program." } ] },
+            { dialogue: "You realize half the audience primarily speaks Spanish, but all your materials and presentation are in English.", options: [ { text: "Pay for on-demand professional live translators to join the meeting.", cost: 600 }, { text: "Compensate bilingual community health workers in the audience to lead breakout discussion groups.", cost2: 350 }, { text: "Sell 'Premium Bilingual Dictionaries' at the door for a total of $1000." } ] },
+            { dialogue: "Several attendees brought their young children, who are now running around the room and making it impossible to continue the presentation.", options: [ { text: "Spend funds to hire professional on-site childcare for the next hour.", cost: 400 }, { text: "Compensate a local youth group to run an engaging kids' health activity in the back of the room.", cost2: 250 }, { text: "Charge the parents $1000 in impromptu 'daycare fees'." } ] }
+        ];
+
+        const thQA = [
+            { dialogue: "During the Q&A, a massive deliverable from your shared workplan is requested by a community member. It is incredibly out of scope and requires resources you do not have.", options: [ { text: "Offer to spend funds to hire a temporary worker to cover the extra deliverables.", cost: 750 }, { text: "Compensate the lead CBO partner to explain the shared strategic plan boundaries to the crowd.", cost2: 150 }, { text: "Say you will absolutely do it, but only if they crowdfund $1000 right now." } ] },
+            { dialogue: "A community member steps up to the mic and asks an incredibly hostile, bad-faith question designed to make the health division look bad.", options: [ { text: "Hand out free transportation passes to cool the tension in the room.", cost: 200 }, { text: "Compensate a trusted community elder for their time to answer the hostile question.", cost2: 200 }, { text: "Implement a 'Pay-to-Ask' rule and force them to give you $1000 to answer the question." } ] },
+            { dialogue: "Several local groups at the town hall start arguing over which neighborhood should receive the primary focus of your program's services.", options: [ { text: "Guarantee micro-contracts to appease all the demanding groups.", cost: 750 }, { text: "Fund a participatory budgeting committee with local residents to decide on service allocation.", cost2: 500 }, { text: "Hold a live bidding war and award the services to whichever group pays you $1000." } ] },
+            { dialogue: "You open the floor for the Q&A session, but the audience is completely silent. No one wants to be the first to speak.", options: [ { text: "Offer door prizes for anyone brave enough to step up to the mic.", cost: 100 }, { text: "Compensate CBO partners to initiate a 'fishbowl' discussion to get locals talking to each other.", cost2: 250 }, { text: "Lock the doors and say nobody leaves until you collect $1000 in donations." } ] },
+            { dialogue: "A community member takes the microphone and begins a long, rambling, emotional story that is completely off-topic from the town hall's purpose.", options: [ { text: "Pay a 'stipend' to the speaker to politely take their seat.", cost: 300 }, { text: "Compensate a local peer support specialist to validate their story and guide them to a breakout session.", cost2: 200 }, { text: "Start a literal stopwatch and charge them $1000 for going over their allotted time." } ] },
+            { dialogue: "An attendee demands immediate, direct medical services right now, bypassing all standard intake procedures and waiting lists.", options: [ { text: "Spend funds to immediately dispatch an emergency supply run for them.", cost: 500 }, { text: "Fund the local neighborhood mutual aid network present at the meeting to connect them instantly.", cost2: 300 }, { text: "Offer a 'Fast Pass' to skip the intake line for exactly $1000." } ] }
+        ];
+
+        let state = {
+            turn: 1, miles: 0, lastMaintenanceMile: 0, 
+            program: "", budget: 0, burnRate: 0, startingBurnRate: 0, 
+            regionalBuyIn: { "Urban": 50, "Suburban": 50, "Rural": 50, "Frontier": 50 },
+            programEffectiveness: 50, effDecay: 4, efBoost: 30, buyInDecay: 2, effPenalty: 5,
+            mgSpeedMult: 1.0, mgSpawnMult: 1.0, efficiencyProtocols: 0, pmYtdSavings: 0,
+            communityEngagedThisTurn: false, directServiceThisTurn: false,
+            epiYTDBonus: 0, pmBonusEarned: 0, stratBonusEarned: 0, activeEpiBonuses: [], 
+            strategicAlignment: 50, alignmentDecay: 4, alignmentBoost: 30, elizabethUsedThisTurn: false,
+            maxAlignmentBonuses: 0, 
+            actions: { town_hall: 0, direct_service: 0, cbo_meet: 0, epi: 0, pm: 0, strat: 0 },
+            cityVisits: {}, densityVisits: { "Urban": 0, "Suburban": 0, "Rural": 0, "Frontier": 0 },
+            
+            vnSetupBag: [], vnPresBag: [], vnQABag: [],
+            vnCurrentScenario: null, vnCurrentCity: null, vnDecisionIndex: 0, 
+            vnCurrentCost1: 0, vnCurrentCost2: 0,
+
+            isGameOver: false, pendingActivity: null, pendingCity: null,
+            currentLocation: "Oregon City", currentDensity: "Urban",
+            traveling: false, travelPhase: 0, travelTimer: 0, previousDensity: "Urban"
+        };
+
+        Object.keys(cityData).forEach(city => state.cityVisits[city] = 0);
+
+        function reshuffleTownHallBags(type) {
+            if (type === "setup") {
+                state.vnSetupBag = thSetup.slice(); 
+                for (let i = state.vnSetupBag.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [state.vnSetupBag[i], state.vnSetupBag[j]] = [state.vnSetupBag[j], state.vnSetupBag[i]]; }
+            } else if (type === "pres") {
+                state.vnPresBag = thPres.slice(); 
+                for (let i = state.vnPresBag.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [state.vnPresBag[i], state.vnPresBag[j]] = [state.vnPresBag[j], state.vnPresBag[i]]; }
+            } else if (type === "qa") {
+                state.vnQABag = thQA.slice(); 
+                for (let i = state.vnQABag.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [state.vnQABag[i], state.vnQABag[j]] = [state.vnQABag[j], state.vnQABag[i]]; }
+            }
+        }
+
+        function modifyRegionBuyIn(region, amount) {
+            state.regionalBuyIn[region] = Math.max(0, state.regionalBuyIn[region] + amount);
+        }
+
+        function getMasterBuyIn() {
+            let total = (state.regionalBuyIn["Suburban"] * 10) +
+                        (state.regionalBuyIn["Rural"] * 8) +
+                        (state.regionalBuyIn["Urban"] * 4) +
+                        (state.regionalBuyIn["Frontier"] * 2);
+            return Math.floor(total / 24);
+        }
+
+        const logEl = document.getElementById("text-log");
+        let isTyping = false;
+        let messageQueue = [];
+
+        function processQueue() {
+            if (isTyping) return;
+            if (messageQueue.length === 0) {
+                if (!state.isGameOver && !state.traveling && document.getElementById("vn-modal").style.display !== "flex" && 
+                    document.getElementById("minigame-modal").style.display !== "flex" &&
+                    document.getElementById("instruction-modal").style.display !== "flex") {
+                    document.querySelectorAll(".game-btn, .game-select").forEach(el => el.disabled = false);
+                }
+                return;
+            }
+            isTyping = true;
+            document.querySelectorAll(".game-btn, .game-select").forEach(el => el.disabled = true);
+
+            let msgHtml = messageQueue.shift();
+            let container = document.createElement("span");
+            logEl.appendChild(container);
+
+            let i = 0; let speed = 8; let currentHTML = "";
+
+            function typeNext() {
+                if (i < msgHtml.length) {
+                    if (msgHtml[i] === '<') {
+                        let tagEnd = msgHtml.indexOf('>', i);
+                        if (tagEnd !== -1) {
+                            currentHTML += msgHtml.substring(i, tagEnd + 1);
+                            i = tagEnd + 1;
+                        } else { currentHTML += msgHtml[i]; i++; }
+                        typeNext(); 
+                    } else {
+                        currentHTML += msgHtml[i]; i++; container.innerHTML = currentHTML;
+                        logEl.scrollTop = logEl.scrollHeight; setTimeout(typeNext, speed);
+                    }
+                } else { isTyping = false; processQueue(); }
+            }
+            typeNext();
+        }
+
+        function logMessage(msg) { messageQueue.push(`<br>> ${msg}`); processQueue(); }
+        function logHeader(title, color) { messageQueue.push(`<br><br><span style="color: ${color}; font-weight: bold;">--- ${title} ---</span>`); processQueue(); }
+
+        // --- TRAVEL ENGINE ---
+        const tCanvas = document.getElementById('travel-canvas');
+        const tCtx = tCanvas.getContext('2d');
+        tCtx.imageSmoothingEnabled = false;
+        let bgOffset = 0;
+        let wheelRot = 0;
+        
+        // Frame Throttle Variables
+        const FPS_INTERVAL = 1000 / 60;
+        let lastTravelTime = performance.now();
+
+        function getGroundColor(den) {
+            if (den === "Rural" || den === "Frontier") return "#DAA520";
+            if (den === "PSB" || den === "Urban") return "#555";
+            return "#228B22"; 
+        }
+
+        function drawLandmark(ctx, density) {
+            if (density === "PSB") {
+                ctx.fillStyle = "#8B0000"; ctx.fillRect(0, -150, 180, 150); 
+                ctx.fillStyle = "#550000"; ctx.fillRect(-10, -160, 200, 10);
+                ctx.fillStyle = "#FFF";
+                for(let r=0; r<4; r++) {
+                    for(let c=0; c<4; c++) {
+                        ctx.fillRect(20 + c*40, -130 + r*30, 20, 20);
+                    }
+                }
+                ctx.fillStyle = "#000"; ctx.fillRect(70, -30, 40, 30); 
+                ctx.fillStyle = "#FFF"; ctx.fillRect(60, -60, 60, 20); 
+                ctx.fillStyle = "#000"; ctx.font = "bold 16px monospace"; ctx.textAlign="center"; ctx.fillText("PSB", 90, -45);
+            } else if (density === "Urban") {
+                ctx.fillStyle = "#777"; ctx.fillRect(20, -150, 40, 150); ctx.fillRect(70, -180, 50, 180); ctx.fillRect(130, -120, 30, 120);
+                ctx.fillStyle = "#FFFF00"; ctx.fillRect(30,-130,10,10); ctx.fillRect(90,-160,10,10); ctx.fillRect(140,-100,10,10);
+            } else if (density === "Suburban") {
+                ctx.fillStyle = "#CCC"; ctx.fillRect(20, -60, 150, 60);
+                ctx.fillStyle = "#0000AA"; ctx.fillRect(15, -70, 160, 10); 
+                ctx.fillStyle = "#000"; ctx.fillRect(80, -30, 30, 30); 
+            } else if (density === "Rural") {
+                ctx.fillStyle = "#AA0000"; ctx.fillRect(40, -80, 100, 80); 
+                ctx.fillStyle = "#FFF"; ctx.fillRect(80, -40, 20, 40); 
+                ctx.fillStyle = "#888"; ctx.fillRect(150, -120, 30, 120); 
+                ctx.beginPath(); ctx.arc(165, -120, 15, Math.PI, 0); ctx.fill();
+            } else if (density === "Frontier") {
+                ctx.fillStyle = "#8B4513"; ctx.fillRect(50, -70, 80, 70); 
+                ctx.fillStyle = "#5C2E0B"; ctx.fillRect(45, -80, 90, 10); 
+                ctx.fillRect(30, -20, 10, 20); ctx.fillRect(140, -20, 10, 20); ctx.fillRect(30,-15,120,5); 
+            }
+        }
+
+        function animateCanvas(timestamp) {
+            requestAnimationFrame(animateCanvas);
+            
+            if (!timestamp) timestamp = performance.now();
+            let elapsed = timestamp - lastTravelTime;
+            
+            if (elapsed < FPS_INTERVAL) return; // Frame limit to 60fps
+            lastTravelTime = timestamp - (elapsed % FPS_INTERVAL);
+
+            let w = tCanvas.width; let h = tCanvas.height;
+            tCtx.clearRect(0,0,w,h);
+            
+            tCtx.fillStyle = "#87CEEB"; tCtx.fillRect(0,0,w,h);
+            
+            let targetDensity = state.travelPhase > 0 ? (state.pendingCity === "PSB" ? "PSB" : cityData[state.pendingCity].density) : state.currentDensity;
+            let cOld = getGroundColor(state.previousDensity || "Urban");
+            let cNew = getGroundColor(targetDensity);
+            
+            let groundShiftX = 0; 
+            if (state.travelPhase === 0) {
+                tCtx.fillStyle = cNew; tCtx.fillRect(0, h/2, w, h/2);
+            } else if (state.travelPhase === 1) {
+                tCtx.fillStyle = cOld; tCtx.fillRect(0, h/2, w, h/2);
+            } else if (state.travelPhase === 2) {
+                let p = state.travelTimer / 45;
+                groundShiftX = w - (w * p);
+                tCtx.fillStyle = cNew; tCtx.fillRect(groundShiftX, h/2, w, h/2);
+                tCtx.fillStyle = cOld; tCtx.fillRect(0, h/2, groundShiftX, h/2);
+            } else if (state.travelPhase === 3) {
+                tCtx.fillStyle = cNew; tCtx.fillRect(0, h/2, w, h/2);
+            }
+
+            tCtx.fillStyle = "#444"; tCtx.fillRect(0, h/2 + 20, w, 80);
+            tCtx.fillStyle = "#FFF";
+            if (state.travelPhase > 0) bgOffset = (bgOffset + 5) % 80;
+            for(let i=-80; i<w; i+=80) { tCtx.fillRect(i - bgOffset, h/2 + 55, 40, 10); }
+
+            let lmx = w + 200; 
+            
+            if (state.travelPhase === 0) {
+                lmx = w/2 + 20; 
+                tCtx.save(); tCtx.translate(lmx, h/2 + 20); drawLandmark(tCtx, state.currentDensity); tCtx.restore();
+            } else if (state.travelPhase === 1) {
+                let p = state.travelTimer / 30; 
+                lmx = (w/2 + 20) - ((w/2 + 220) * p);
+                tCtx.save(); tCtx.translate(lmx, h/2 + 20); drawLandmark(tCtx, state.previousDensity); tCtx.restore();
+                
+                state.travelTimer++;
+                if (state.travelTimer >= 30) { state.travelPhase = 2; state.travelTimer = 0; }
+            } else if (state.travelPhase === 2) {
+                state.travelTimer++;
+                if (state.travelTimer >= 45) { state.travelPhase = 3; state.travelTimer = 0; }
+            } else if (state.travelPhase === 3) {
+                let p = state.travelTimer / 60;
+                lmx = (w + 200) - ((w/2 + 180) * p);
+                tCtx.save(); tCtx.translate(lmx, h/2 + 20); drawLandmark(tCtx, targetDensity); tCtx.restore();
+                
+                state.travelTimer++;
+                if (state.travelTimer >= 60) { 
+                    state.travelPhase = 0; 
+                    state.previousDensity = state.currentDensity;
+                    resolveTravel(); 
+                }
+            }
+
+            let bounce = 0;
+            if (state.travelPhase > 0) {
+                bounce = Math.sin((state.travelPhase === 1 ? state.travelTimer : state.travelPhase === 2 ? state.travelTimer + 30 : state.travelTimer + 75) * 0.5) * 3;
+                wheelRot += 0.2;
+            }
+            
+            tCtx.save();
+            tCtx.translate(w/2 - 120, h/2 + 10 + bounce);
+            tCtx.fillStyle = "#FFF"; tCtx.beginPath(); tCtx.moveTo(10,15); tCtx.lineTo(110,15); tCtx.lineTo(135,35); tCtx.lineTo(135,60); tCtx.lineTo(10,60); tCtx.fill(); 
+            tCtx.fillStyle = "#000"; tCtx.beginPath(); tCtx.moveTo(112,18); tCtx.lineTo(128,35); tCtx.lineTo(112,35); tCtx.fill(); 
+            tCtx.fillRect(90,18,20,17); 
+            tCtx.font = "bold 34px 'VT323', monospace"; tCtx.textAlign="left"; tCtx.fillText("MO", 50, 45); 
+            
+            [35, 105].forEach(wx => {
+                tCtx.save(); tCtx.translate(wx, 60); tCtx.rotate(wheelRot);
+                tCtx.fillStyle = "#000"; tCtx.beginPath(); tCtx.arc(0,0,10,0,Math.PI*2); tCtx.fill();
+                tCtx.strokeStyle = "#FFF"; tCtx.lineWidth=2; tCtx.stroke();
+                tCtx.beginPath(); tCtx.moveTo(-10,0); tCtx.lineTo(10,0); tCtx.stroke();
+                tCtx.beginPath(); tCtx.moveTo(0,-10); tCtx.lineTo(0,10); tCtx.stroke();
+                tCtx.restore();
+            });
+            tCtx.restore();
+        }
+        
+        requestAnimationFrame(animateCanvas);
+
+        // --- BACKGROUND GENERATORS (Mini-Games) ---
+        function drawWarehouseBg(ctx, w, h) {
+            ctx.fillStyle = "#1a1a1a"; ctx.fillRect(0,0,w,h);
+            ctx.fillStyle = "#3a2015";
+            for(let y=0; y<h; y+=30) {
+                for(let x=0; x<w; x+=60) {
+                    ctx.fillRect(x + (y%60===0?0:30), y, 58, 28);
+                }
+            }
+            ctx.fillStyle = "#111"; ctx.fillRect(150,0,60,h); ctx.fillRect(w-210,0,60,h); 
+            ctx.fillStyle = "#444"; ctx.fillRect(0,0,w,40); 
+        }
+
+        function drawHouseBg(ctx, w, h) {
+            ctx.fillStyle = "#228B22"; ctx.fillRect(0,0,w,h);
+            let hx = 100, hy = 100, hw = w - 200, hh = h - 200;
+            ctx.fillStyle = "#555"; ctx.fillRect(hx-10, hy-10, hw+20, hh+20);
+            ctx.fillStyle = "#DEB887"; ctx.fillRect(hx, hy, hw, hh);
+            ctx.fillStyle = "#555"; let rw = hw / 3; let rh = hh / 2;
+            ctx.fillRect(hx + rw - 5, hy, 10, hh); ctx.fillRect(hx + rw*2 - 5, hy, 10, hh); ctx.fillRect(hx, hy + rh - 5, hw, 10);
+            ctx.fillStyle = "#DEB887"; ctx.fillRect(hx + rw - 5, hy + rh/2 - 30, 10, 60); ctx.fillRect(hx + rw*2 - 5, hy + rh/2 - 30, 10, 60); ctx.fillRect(hx + rw/2 - 30, hy + rh - 5, 60, 10); ctx.fillRect(hx + rw*1.5 - 30, hy + rh - 5, 60, 10); ctx.fillRect(hx + rw*2.5 - 30, hy + rh - 5, 60, 10);
+        }
+
+        // --- MINI-GAME ENGINE ---
+        let mgType = "";
+        let mgScore = 0;
+        let mgTime = 15;
+        let mgTargets = [];
+        let mgFloatingTexts = [];
+        let mgLines = [];
+        let mgInterval;
+        let mgCity = "";
+        let mgMaxScore = 15;
+        let mouseX = 550, mouseY = 320;
+        let draggingItem = null;
+        let triageCounts = [0, 0, 0];
+
+        const mgCanvas = document.getElementById('mg-canvas');
+        const mgCtx = mgCanvas.getContext('2d');
+        mgCtx.imageSmoothingEnabled = false; 
+
+        function showInstructions(prog) {
+            state.program = prog;
+            document.getElementById("start-screen").style.display = "none";
+            document.getElementById("instructions-screen").style.display = "flex";
+        }
+
+        function prepareMinigame() {
+            let activity = state.pendingActivity;
+            let city = state.pendingCity;
+            mgCity = city;
+
+            let pm = state.actions.pm;
+            mgMaxScore = 15 + (state.actions.strat * 2);
+
+            document.getElementById("btn-start-minigame").onclick = executeMinigameStart;
+
+            let title, desc;
+            if (activity === "cbo_meet") {
+                mgType = "cbo"; 
+                title = "CBO NETWORKING EVENT";
+                desc = `Click the moving CBO directors to establish connections!<br>Each connection grants <span style="color:#00FF00;font-weight:bold;">4 Base</span>${pm > 0 ? ` <span style="color:#FFFF00;font-weight:bold;">+${pm} ODU Bonus</span>` : ''} Strategic Alignment.<br><span style="color:#00FF00;">Performance Bonus: Up to +5 Local Buy-In</span>`;
+            } else {
+                if (state.program === 'Healthy Homes') {
+                    mgType = "ds_normal"; title = "HAZARD HUNT";
+                    desc = "Click the environmental hazards before they vanish!<br>Hazards appear with gold text indicating their combined value.<br>";
+                    desc += `<div style="display:flex; justify-content:space-around; margin-top:10px; background:rgba(0,0,0,0.5); padding:10px; border-radius:10px; border:1px solid #aaa; color:#FFF;">
+                        <div style="font-size:22px;">Broken Smoke Detector:<br><span style="color:#00FF00;font-weight:bold;">1 Base</span>${pm > 0 ? `<br><span style="color:#FFFF00;font-weight:bold;">+${pm} ODU Bonus</span>` : ''}</div>
+                        <div style="font-size:22px;">Lead Paint:<br><span style="color:#00FF00;font-weight:bold;">2 Base</span>${pm > 0 ? `<br><span style="color:#FFFF00;font-weight:bold;">+${pm} ODU Bonus</span>` : ''}</div>
+                        <div style="font-size:22px;">Mold Spot:<br><span style="color:#00FF00;font-weight:bold;">3 Base</span>${pm > 0 ? `<br><span style="color:#FFFF00;font-weight:bold;">+${pm} ODU Bonus</span>` : ''}</div>
+                    </div>`;
+                } else if (state.program === 'Youth Mental Health') {
+                    mgType = "ds_hard"; title = "ACTIVE LISTENING";
+                    desc = "Move your mouse left and right to control the shield.<br>Deflect the falling stressors! Missed items decrease your score.<br>";
+                    desc += `<div style="display:flex; justify-content:space-around; margin-top:10px; background:rgba(0,0,0,0.5); padding:10px; border-radius:10px; border:1px solid #aaa; color:#FFF;">
+                        <div style="font-size:22px;">Sad Face:<br><span style="color:#00FF00;font-weight:bold;">1 Base</span>${pm > 0 ? `<br><span style="color:#FFFF00;font-weight:bold;">+${pm} ODU Bonus</span>` : ''}</div>
+                        <div style="font-size:22px;">Stop Sign:<br><span style="color:#00FF00;font-weight:bold;">2 Base</span>${pm > 0 ? `<br><span style="color:#FFFF00;font-weight:bold;">+${pm} ODU Bonus</span>` : ''}</div>
+                        <div style="font-size:22px;">Rock:<br><span style="color:#00FF00;font-weight:bold;">3 Base</span>${pm > 0 ? `<br><span style="color:#FFFF00;font-weight:bold;">+${pm} ODU Bonus</span>` : ''}</div>
+                    </div>`;
+                } else {
+                    mgType = "ds_extreme"; title = "RAPID TRIAGE";
+                    desc = "Click and drag the supplies from the conveyor belt into the matching brown wooden crates!<br>";
+                    desc += `<div style="display:flex; justify-content:space-around; margin-top:10px; background:rgba(0,0,0,0.5); padding:10px; border-radius:10px; border:1px solid #aaa; color:#FFF;">
+                        <div style="font-size:22px;">Naloxone:<br><span style="color:#00FF00;font-weight:bold;">1 Base</span>${pm > 0 ? `<br><span style="color:#FFFF00;font-weight:bold;">+${pm} ODU Bonus</span>` : ''}</div>
+                        <div style="font-size:22px;">Medkit:<br><span style="color:#00FF00;font-weight:bold;">2 Base</span>${pm > 0 ? `<br><span style="color:#FFFF00;font-weight:bold;">+${pm} ODU Bonus</span>` : ''}</div>
+                        <div style="font-size:22px;">Syringe:<br><span style="color:#00FF00;font-weight:bold;">3 Base</span>${pm > 0 ? `<br><span style="color:#FFFF00;font-weight:bold;">+${pm} ODU Bonus</span>` : ''}</div>
+                    </div>`;
+                }
+                desc += `<br><span style="color:#00FF00;">Performance Bonus: Up to +5 Local Buy-In</span>`;
+            }
+
+            document.getElementById("inst-title").innerText = title;
+            document.getElementById("inst-desc").innerHTML = desc;
+            
+            let bonusEl = document.getElementById("inst-pm-bonus");
+            let bonusText = [];
+            if (state.actions.strat > 0) {
+                bonusText.push(`Strategic Alignment Active: Max Cap is ${mgMaxScore}!`);
+            }
+            
+            if (bonusText.length > 0) {
+                bonusEl.innerHTML = bonusText.join("<br>");
+                bonusEl.style.display = "block";
+            } else {
+                bonusEl.style.display = "none";
+            }
+
+            document.getElementById("instruction-modal").style.display = "flex";
+        }
+
+        function executeMinigameStart() {
+            document.getElementById("instruction-modal").style.display = "none";
+            
+            mgScore = 0; mgTime = 15;
+            window.mgPmEarned = 0; 
+            mgTargets = []; mgFloatingTexts = []; mgLines = []; draggingItem = null;
+            triageCounts = [0, 0, 0];
+            mouseX = mgCanvas.width / 2; mouseY = mgCanvas.height / 2;
+            
+            document.getElementById("mg-hud-title").innerText = document.getElementById("inst-title").innerText;
+            document.getElementById('mg-time').innerText = mgTime;
+            document.getElementById('mg-score').innerText = mgScore;
+            document.getElementById('mg-score').style.color = "#00FF00";
+            document.getElementById('mg-max-display').innerText = `/ ${mgMaxScore}`;
+            
+            document.getElementById('minigame-modal').style.display = 'flex';
+
+            mgInterval = setInterval(() => {
+                mgTime--; document.getElementById('mg-time').innerText = mgTime;
+                if (mgTime <= 0) endMinigame();
+            }, 1000);
+        }
+
+        function drawPixelHazard(ctx, t) {
+            let r = t.radius;
+            if (t.type === "mold") {
+                ctx.fillStyle = t.hit ? "#00FF00" : "#228B22"; ctx.beginPath();
+                for(let j=0; j<8; j++) { let ang = j * Math.PI / 4; ctx.lineTo(r*Math.cos(ang) + (Math.random()-0.5)*r*0.3, r*Math.sin(ang) + (Math.random()-0.5)*r*0.3); } ctx.closePath(); ctx.fill();
+            } else if (t.type === "lead") {
+                ctx.fillStyle = "#888"; ctx.fillRect(-r*.8,-r,r*1.6,r*2); 
+                ctx.fillStyle = "#444"; ctx.fillRect(-r*.8,-r,r*1.6,r*.2); 
+                ctx.fillStyle = "#FFF"; ctx.fillRect(-r*.6,0,r*1.2,r*.8); 
+                ctx.fillStyle = "#000"; ctx.font = "bold 14px VT323, monospace"; ctx.textAlign="center"; ctx.fillText("LEAD",0,r*0.7);
+            } else { 
+                ctx.fillStyle = "#FFF"; ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill(); 
+                ctx.lineWidth=2; ctx.strokeStyle="#aaa"; ctx.stroke();
+                ctx.strokeStyle="#000"; ctx.beginPath(); ctx.moveTo(-r*.5, -r*.4); ctx.lineTo(r*.5, -r*.4); ctx.stroke(); ctx.beginPath(); ctx.moveTo(-r*.5, r*.4); ctx.lineTo(r*.5, r*.4); ctx.stroke();
+            }
+        }
+
+        function drawPixelStressor(ctx, t) {
+            let r = t.radius;
+            if (t.type === "octagon") { 
+                ctx.fillStyle = "#FF0000"; ctx.beginPath();
+                for(let j=0; j<8; j++) { let ang = j * Math.PI / 4 + Math.PI/8; ctx.lineTo(r*Math.cos(ang), r*Math.sin(ang)); } ctx.closePath(); ctx.fill();
+            } else if (t.type === "sad") { 
+                ctx.fillStyle = "#FFFF00"; ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
+                ctx.fillStyle="#000"; ctx.fillRect(-6,-4,3,3); ctx.fillRect(3,-4,3,3);
+                ctx.strokeStyle="#000"; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(0,8,5,Math.PI,0); ctx.stroke();
+            } else { 
+                ctx.fillStyle = "#AAAAAA"; ctx.beginPath();
+                ctx.moveTo(-r,0); ctx.lineTo(-r*.5,-r*.8); ctx.lineTo(r*.5,-r); ctx.lineTo(r,-r*.2); ctx.lineTo(r*.8,r*.8); ctx.lineTo(-r*.3,r); ctx.closePath(); ctx.fill();
+            }
+        }
+
+        function drawPixelTriageItem(ctx, t) {
+            if (t.type === "medkit") {
+                ctx.fillStyle="#FFF"; ctx.fillRect(-20,-15,40,30); 
+                ctx.fillStyle="#FF0000"; ctx.fillRect(-4,-5,8,14); ctx.fillRect(-8,-1,16,6); 
+            } else if (t.type === "syringe") {
+                ctx.fillStyle="#FFF"; ctx.fillRect(-5,-15,10,20); 
+                ctx.strokeStyle="#AAA"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(0,-15); ctx.lineTo(0,-25); ctx.stroke(); 
+                ctx.fillStyle="#555"; ctx.fillRect(-8,5,16,4); 
+            } else { 
+                ctx.fillStyle="#FF66B2"; ctx.fillRect(-15,-10,30,25); ctx.fillStyle="#FFF"; ctx.fillRect(-8,-20,16,10); ctx.fillRect(-10,-5,20,15); ctx.fillStyle="#000"; ctx.font="bold 10px sans-serif"; ctx.textAlign="center"; ctx.fillText("NAR",0,5);
+            }
+        }
+
+        function drawPixelPerson(ctx, x, y, color, isHit) {
+            let size = 3; ctx.fillStyle = isHit ? "#00FF00" : color; ctx.fillRect(x - 3*size, y - 1*size, 6*size, 5*size); ctx.fillStyle = isHit ? "#00FF00" : "#FFC0CB"; ctx.fillRect(x - 2*size, y - 5*size, 4*size, 4*size); ctx.fillStyle = isHit ? "#00FF00" : "#555"; ctx.fillRect(x - 2*size, y + 4*size, 2*size, 3*size); ctx.fillRect(x + 1*size, y + 4*size, 2*size, 3*size);
+        }
+
+        function updateScore(baseAmt, pmAmt, x, y, useGold = false) {
+            let totalAmt = baseAmt + pmAmt;
+            let actualGain = Math.min(totalAmt, mgMaxScore - mgScore);
+            if (actualGain <= 0) return;
+
+            mgScore += actualGain;
+            let pmGain = Math.min(pmAmt, actualGain);
+            window.mgPmEarned += pmGain;
+
+            let color = useGold && mgScore >= 15 ? "#FFFF00" : "#00FF00"; 
+            document.getElementById('mg-score').innerText = mgScore; 
+            document.getElementById('mg-score').style.color = color; 
+            mgFloatingTexts.push({x: x, y: y - 20, text: `+${actualGain}`, color: color, life: 40});
+        }
+
+        let lastMgTime = performance.now();
+
+        function mgLoop(timestamp) {
+            requestAnimationFrame(mgLoop);
+            
+            if (!timestamp) timestamp = performance.now();
+
+            if (document.getElementById('minigame-modal').style.display !== 'flex') {
+                lastMgTime = timestamp; 
+                return;
+            }
+
+            let elapsed = timestamp - lastMgTime;
+            if (elapsed < FPS_INTERVAL) return;
+            lastMgTime = timestamp - (elapsed % FPS_INTERVAL);
+
+            mgCtx.clearRect(0, 0, mgCanvas.width, mgCanvas.height);
+
+            // NETWORK CBO DIRECTORS
+            if (mgType === "cbo") {
+                let cx = mgCanvas.width / 2; let cy = mgCanvas.height / 2; drawPixelPerson(mgCtx, cx, cy, "#FFFFFF", false); mgCtx.fillStyle = "#FFF"; mgCtx.font = "bold 18px VT323, monospace"; mgCtx.textAlign = "center"; mgCtx.fillText("YOU", cx, cy - 25); if (Math.random() < 0.05 * state.mgSpawnMult) { let edge = Math.floor(Math.random() * 4); let x, y, vx, vy; let speedBase = (Math.random() * 3 + 2) * state.mgSpeedMult; if (edge === 0) { x = Math.random() * mgCanvas.width; y = -30; vx = (Math.random() - 0.5) * speedBase; vy = speedBase; } else if (edge === 1) { x = mgCanvas.width + 30; y = Math.random() * mgCanvas.height; vx = -speedBase; vy = (Math.random() - 0.5) * speedBase; } else if (edge === 2) { x = Math.random() * mgCanvas.width; y = mgCanvas.height + 30; vx = (Math.random() - 0.5) * speedBase; vy = -speedBase; } else { x = -30; y = Math.random() * mgCanvas.height; vx = speedBase; vy = (Math.random() - 0.5) * speedBase; } let tunicColors = ["#FF0000", "#0088FF", "#8800FF", "#FFFF00"]; mgTargets.push({x: x, y: y, vx: vx, vy: vy, radius: 15, hit: false, color: tunicColors[Math.floor(Math.random() * tunicColors.length)]}); } for (let i = mgTargets.length - 1; i >= 0; i--) { let t = mgTargets[i]; t.x += t.vx; t.y += t.vy; if (t.x < -40 || t.x > mgCanvas.width + 40 || t.y < -40 || t.y > mgCanvas.height + 40) { if (!t.hit && mgTime > 0) { mgScore -= 2; if(mgScore < 0) mgScore = 0; document.getElementById('mg-score').innerText = mgScore; document.getElementById('mg-score').style.color = "#00FF00"; let textX = Math.min(Math.max(t.x, 20), mgCanvas.width - 20); let textY = Math.min(Math.max(t.y, 20), mgCanvas.height - 20); mgFloatingTexts.push({x: textX, y: textY, text: "-2", color: "#FF0000", life: 40}); } mgTargets.splice(i, 1); continue; } drawPixelPerson(mgCtx, t.x, t.y, t.color, t.hit); }
+            } 
+            // HAZARD HUNT
+            else if (mgType === "ds_normal") { 
+                drawHouseBg(mgCtx, mgCanvas.width, mgCanvas.height);
+                if (Math.random() < 0.05 * state.mgSpawnMult) {
+                    let rand = Math.random(); let type, tBase, life; 
+                    if (rand < 0.33) { type = "mold"; tBase = 3; life = 90; } 
+                    else if (rand < 0.66) { type = "lead"; tBase = 2; life = 120; } 
+                    else { type = "smoke"; tBase = 1; life = 150; } 
+                    let hx = 120, hy = 120, hw = mgCanvas.width - 240, hh = mgCanvas.height - 240;
+                    mgTargets.push({ type: type, x: hx + Math.random() * hw, y: hy + Math.random() * hh, radius: 25, basePts: tBase, pmPts: state.actions.pm, life: life, hit: false }); 
+                } 
+                for (let i = mgTargets.length - 1; i >= 0; i--) { 
+                    let t = mgTargets[i]; 
+                    t.life--; 
+                    if (t.life <= 0) {
+                        if (!t.hit && mgTime > 0) {
+                            mgScore = Math.max(0, mgScore - 1);
+                            document.getElementById('mg-score').innerText = mgScore;
+                            document.getElementById('mg-score').style.color = mgScore >= 15 ? "#FFFF00" : "#00FF00";
+                            mgFloatingTexts.push({x: t.x, y: t.y, text: "-1", color: "#FF0000", life: 40});
+                        }
+                        mgTargets.splice(i, 1); 
+                        continue; 
+                    } 
+                    mgCtx.save(); mgCtx.translate(t.x, t.y); drawPixelHazard(mgCtx, t); mgCtx.restore(); mgCtx.fillStyle = "#000"; mgCtx.font = "bold 20px monospace"; mgCtx.textAlign = "center"; mgCtx.fillText(`+${t.basePts + t.pmPts}`, t.x, t.y + 6); 
+                }
+            }
+            // ACTIVE LISTENING
+            else if (mgType === "ds_hard") { 
+                mgCtx.fillStyle = "#000"; mgCtx.fillRect(0,0,mgCanvas.width,mgCanvas.height);
+
+                if (Math.random() < 0.06 * state.mgSpawnMult) { 
+                    let rand = Math.random(); let type, tBase, vy, r=15; let baseSpeed = (Math.random() * 2 + 2) * state.mgSpeedMult; 
+                    if (rand < 0.50) { type = "sad"; tBase = 1; vy = baseSpeed * 1.5; } 
+                    else if (rand < 0.85) { type = "octagon"; tBase = 2; vy = baseSpeed * 1.0; r = 18; } 
+                    else { type = "rock"; tBase = 3; vy = baseSpeed * 0.6; r = 20; } 
+                    mgTargets.push({ type: type, x: Math.random() * mgCanvas.width, y: -20, radius: r, basePts: tBase, pmPts: state.actions.pm, vy: vy, deflected: false, rot: 0, rotSpeed: 0, life: 60 }); 
+                }
+                
+                let paddleY = mgCanvas.height - 60; let paddleW = 160; 
+                mgCtx.fillStyle = "#0088FF"; mgCtx.fillRect(mouseX - paddleW/2, paddleY, paddleW, 40); 
+                mgCtx.fillStyle = "#FFF"; mgCtx.font = "bold 20px VT323, monospace"; mgCtx.textAlign = "center"; 
+                mgCtx.fillText("LISTENING SHIELD", mouseX, paddleY + 25);
+                
+                for (let i = mgTargets.length - 1; i >= 0; i--) { 
+                    let t = mgTargets[i]; t.y += t.vy; mgCtx.save(); 
+                    if (t.deflected) { t.rot += t.rotSpeed; t.life--; mgCtx.shadowColor = "#00FF00"; mgCtx.shadowBlur = 15; mgCtx.fillRect(0,0,0,0); mgCtx.restore(); mgCtx.save(); } 
+                    mgCtx.translate(t.x, t.y); mgCtx.rotate(t.rot); drawPixelStressor(mgCtx, t); mgCtx.restore(); 
+                    
+                    if (!t.deflected && t.y + t.radius >= paddleY && t.y - t.radius <= paddleY + 40 && t.x >= mouseX - paddleW/2 && t.x <= mouseX + paddleW/2) { 
+                        updateScore(t.basePts, t.pmPts, t.x, t.y, true); t.deflected = true; t.vy = -(Math.random() * 4 + 4); t.vx = (Math.random() - 0.5) * 8; t.rotSpeed = (Math.random() - 0.5) * 0.4; 
+                    } else if (!t.deflected && t.y > mgCanvas.height + 20) { 
+                        let lostAmt = t.basePts + t.pmPts; mgScore -= lostAmt; if (mgScore < 0) mgScore = 0; document.getElementById('mg-score').innerText = mgScore; document.getElementById('mg-score').style.color = mgScore >= 15 ? "#FFFF00" : "#00FF00"; mgFloatingTexts.push({x: t.x, y: mgCanvas.height - 20, text: `-${lostAmt}`, color: "#FF0000", life: 40}); mgTargets.splice(i, 1); 
+                    } else if (t.deflected && t.life <= 0) { 
+                        mgTargets.splice(i, 1); 
+                    } 
+                }
+            }
+            // RAPID TRIAGE
+            else if (mgType === "ds_extreme") { 
+                drawWarehouseBg(mgCtx, mgCanvas.width, mgCanvas.height);
+                let beltY = mgCanvas.height / 2 - 30; mgCtx.fillStyle = "#111"; mgCtx.fillRect(0, beltY, mgCanvas.width, 60); 
+
+                let binW = 160; let binY = mgCanvas.height - 130;
+                let bins = [ {x: 180, type: "naloxone", c: "#8B4513"}, {x: mgCanvas.width/2 - binW/2, type: "medkit", c: "#8B4513"}, {x: mgCanvas.width - 180 - binW, type: "syringe", c: "#8B4513"} ];
+                
+                bins.forEach((b, idx) => { mgCtx.fillStyle = b.c; mgCtx.fillRect(b.x, binY, binW, 110); mgCtx.strokeStyle = "#5C2E0B"; mgCtx.lineWidth = 4; mgCtx.strokeRect(b.x, binY, binW, 110); mgCtx.save(); mgCtx.translate(b.x + binW/2, binY + 45); drawPixelTriageItem(mgCtx, {type: b.type}); mgCtx.restore(); mgCtx.fillStyle = "#FFF"; mgCtx.font = "bold 24px monospace"; mgCtx.textAlign="center"; mgCtx.fillText(`Count: ${triageCounts[idx]}`, b.x + binW/2, binY + 95); });
+
+                if (Math.random() < 0.05 * state.mgSpawnMult) { 
+                    let rand = Math.random(); let type, vx, tBase, w=40, h=40; let baseSpeed = (Math.random() * 2 + 2) * state.mgSpeedMult; 
+                    if (rand < 0.33) { type = "naloxone"; vx = baseSpeed * 0.6; tBase = 1; w = 30; h = 30; } 
+                    else if (rand < 0.66) { type = "medkit"; vx = baseSpeed * 1.0; tBase = 2; } 
+                    else { type = "syringe"; vx = baseSpeed * 1.5; tBase = 3; w = 20; } 
+                    mgTargets.push({ type: type, x: -40, y: beltY + 60 - h - 10, w: w, h: h, basePts: tBase, pmPts: state.actions.pm, vx: vx, dragging: false }); 
+                }
+
+                for (let i = mgTargets.length - 1; i >= 0; i--) { let t = mgTargets[i]; if (!t.dragging) { t.x += t.vx; } mgCtx.save(); mgCtx.translate(t.x + t.w/2, t.y + t.h/2); drawPixelTriageItem(mgCtx, t); mgCtx.restore(); if (t.x > mgCanvas.width && !t.dragging) mgTargets.splice(i, 1); } window.triageBins = bins;
+            }
+
+            for (let i = mgLines.length - 1; i >= 0; i--) { let l = mgLines[i]; mgCtx.beginPath(); mgCtx.moveTo(l.x1, l.y1); mgCtx.lineTo(l.x2, l.y2); mgCtx.strokeStyle = "#00FF00"; mgCtx.lineWidth = 3; mgCtx.stroke(); l.life--; if (l.life <= 0) mgLines.splice(i, 1); } mgCtx.textAlign = "center"; for (let i = mgFloatingTexts.length - 1; i >= 0; i--) { let ft = mgFloatingTexts[i]; mgCtx.font = "bold 28px 'VT323', monospace"; mgCtx.shadowColor = "transparent"; mgCtx.fillStyle = ft.color; mgCtx.fillText(ft.text, ft.x, ft.y); ft.y -= 1.5; ft.life--; if (ft.life <= 0) mgFloatingTexts.splice(i, 1); } 
+        }
+
+        requestAnimationFrame(mgLoop);
+
+        mgCanvas.addEventListener('mousemove', function(e) {
+            let rect = this.getBoundingClientRect();
+            let scaleX = this.width / rect.width; let scaleY = this.height / rect.height;
+            mouseX = (e.clientX - rect.left) * scaleX; mouseY = (e.clientY - rect.top) * scaleY;
+            if (mgType === "ds_extreme" && draggingItem) { draggingItem.x = mouseX - draggingItem.w/2; draggingItem.y = mouseY - draggingItem.h/2; }
+        });
+
+        mgCanvas.addEventListener('mousedown', function(e) {
+            if (mgTime <= 0 || document.getElementById('minigame-modal').style.display !== 'flex') return;
+            let rect = this.getBoundingClientRect();
+            let scaleX = this.width / rect.width; let scaleY = this.height / rect.height;
+            let mx = (e.clientX - rect.left) * scaleX; let my = (e.clientY - rect.top) * scaleY;
+
+            if (mgType === "cbo") {
+                for (let i = mgTargets.length - 1; i >= 0; i--) { let t = mgTargets[i]; if (!t.hit && Math.hypot(t.x - mx, t.y - my) <= t.radius + 25) { t.hit = true; mgLines.push({ x1: mgCanvas.width / 2, y1: mgCanvas.height / 2, x2: t.x, y2: t.y, life: 20 }); mgFloatingTexts.push({x: mgCanvas.width / 2, y: (mgCanvas.height / 2) - 50, text: wooQuotes[Math.floor(Math.random() * wooQuotes.length)], color: "#FFFF00", life: 20}); updateScore(4, state.actions.pm, mx, my); t.vx = (Math.random() - 0.5) * 20; t.vy = (Math.random() - 0.5) * 20; if (Math.abs(t.vx) < 8) t.vx = t.vx < 0 ? -9 : 9; if (Math.abs(t.vy) < 8) t.vy = t.vy < 0 ? -9 : 9; break; } }
+            } else if (mgType === "ds_normal") {
+                for (let i = mgTargets.length - 1; i >= 0; i--) { let t = mgTargets[i]; if (Math.hypot(t.x - mx, t.y - my) <= t.radius + 15) { updateScore(t.basePts, t.pmPts, mx, my, true); t.hit = true; t.life = 0; break; } }
+            } else if (mgType === "ds_extreme") {
+                for (let i = mgTargets.length - 1; i >= 0; i--) { let t = mgTargets[i]; if (mx >= t.x && mx <= t.x + t.w && my >= t.y && my <= t.y + t.h) { draggingItem = t; t.dragging = true; break; } }
+            }
+        });
+
+        window.addEventListener('mouseup', function(e) {
+            if (mgType === "ds_extreme" && draggingItem) {
+                let sorted = false;
+                let onBelt = false;
+                let beltY = mgCanvas.height / 2 - 30;
+
+                if (window.triageBins) {
+                    for(let i=0; i<window.triageBins.length; i++) {
+                        let b = window.triageBins[i];
+                        let center_x = draggingItem.x + draggingItem.w/2; let center_y = draggingItem.y + draggingItem.h/2;
+                        if (center_x >= b.x && center_x <= b.x + 160 && center_y >= (mgCanvas.height - 130)) {
+                            if (b.type === draggingItem.type) { updateScore(draggingItem.basePts, draggingItem.pmPts, mouseX, mouseY, true); triageCounts[i]++; } sorted = true; break;
+                        }
+                    }
+                    let cy = draggingItem.y + draggingItem.h/2;
+                    if (!sorted && cy >= beltY && cy <= beltY + 60) onBelt = true;
+                }
+
+                let index = mgTargets.indexOf(draggingItem);
+                if (index > -1) { 
+                    if (sorted) mgTargets.splice(index, 1); 
+                    else if (onBelt) draggingItem.dragging = false;
+                    else mgTargets.splice(index, 1); 
+                } 
+                draggingItem = null;
+            }
+        });
+
+        function endMinigame() {
+            clearInterval(mgInterval);
+            setTimeout(() => {
+                document.getElementById('minigame-modal').style.display = 'none';
+                state.pmBonusEarned += window.mgPmEarned;
+                let stratGain = Math.max(0, mgScore - 15);
+                state.stratBonusEarned += stratGain;
+                applyMinigameRewards(mgType, mgScore, mgCity);
+                finishTurn();
+            }, 1000);
+        }
+
+        // --- TOWN HALL VISUAL NOVEL SYSTEM ---
+        function prepareTownHallInstructions(city) {
+            mgCity = city;
+            document.querySelectorAll(".game-btn, .game-select").forEach(el => el.disabled = true);
+            
+            document.getElementById("inst-title").innerText = "TOWN HALL MEETING";
+            let pm = state.actions.pm;
+            let pmLocal = pm * 2;
+            let pmAll = pm * 1;
+
+            document.getElementById("inst-desc").innerHTML = `Maps a 3-part presentation in the community.<br>Choose your responses carefully!<br><br><div style='font-size:20px; color:#FFF;'>Option 1: Spend Division Funds (<span style='color:#00FF00'>+10 Base ${pmLocal > 0 ? `<span style='color:#FFFF00'>+${pmLocal} ODU Bonus</span> ` : ''}Local Buy-In</span>)<br>Option 2: Compensate CBO Partners (<span style='color:#00FF00'>+2 Base ${pmAll > 0 ? `<span style='color:#FFFF00'>+${pmAll} ODU Bonus</span> ` : ''}ALL Area Buy-In</span>)<br>Option 3: Extract Cash (<span style='color:#FF5555'>-5 ALL Area Buy-In</span>)</div>`;
+            document.getElementById("inst-pm-bonus").style.display = "none";
+            
+            let startBtn = document.getElementById("btn-start-minigame");
+            startBtn.innerText = "START EVENT";
+            startBtn.onclick = function() { handleTownHall(city); };
+            
+            document.getElementById("instruction-modal").style.display = "flex";
+        }
+
+        function handleTownHall(city) {
+            document.getElementById("instruction-modal").style.display = "none";
+            state.pendingActivity = "town_hall";
+            state.pendingCity = city; 
+            state.vnDecisionIndex = 0; 
+            
+            logHeader(`ROUND ${state.turn} ACTION: TOWN HALL IN ${city.toUpperCase()}`, "#FFAA00");
+            
+            if (state.vnSetupBag.length === 0) reshuffleTownHallBags("setup"); 
+            state.vnCurrentScenario = state.vnSetupBag.pop(); 
+            
+            document.getElementById("vn-header").innerText = `TOWN HALL - ${city.toUpperCase()} (${cityData[city].density})`;
+            presentVNScene(state.vnCurrentScenario);
+            document.getElementById("vn-modal").style.display = "flex";
+            document.querySelectorAll(".game-btn, .game-select").forEach(el => el.disabled = true);
+        }
+
+        function presentVNScene(scenario) {
+            document.getElementById("vn-narrative").innerHTML = scenario.dialogue;
+            let btns = document.querySelectorAll(".vn-btn");
+            let density = cityData[state.pendingCity].density;
+            let pm = state.actions.pm;
+            let pmLocal = pm * 2;
+            let pmAll = pm * 1;
+            
+            state.vnCurrentCost1 = Math.min(scenario.options[0].cost, 750);
+            state.vnCurrentCost2 = Math.floor(Math.random() * 501) + 1000;
+
+            btns.forEach((btn, idx) => {
+                let opt = scenario.options[idx];
+                let label, effect;
+                if (idx === 0) {
+                    label = `[SPEND $${state.vnCurrentCost1.toLocaleString()}]`;
+                    effect = `<br><span class="vn-btn-effect" style="color:#00FF00;">+10 Base ${pmLocal > 0 ? `<span style="color:#FFFF00">+${pmLocal} ODU</span> ` : ''}${density} Buy-In</span>`;
+                } else if (idx === 1) {
+                    label = `[COMPENSATE CBO: $${state.vnCurrentCost2.toLocaleString()}]`;
+                    effect = `<br><span class="vn-btn-effect" style="color:#00FF00;">+2 Base ${pmAll > 0 ? `<span style="color:#FFFF00">+${pmAll} ODU</span> ` : ''}ALL Area Buy-In</span>`;
+                } else {
+                    label = `[GET $1000]`;
+                    effect = `<br><span class="vn-btn-effect" style="color:#FF5555;">-5 ALL Area Buy-In</span>`;
+                }
+                btn.innerHTML = `<span>${opt.text}</span>
+                                 <span style="color:#FFFF00; font-weight:bold; margin-top:10px; font-size:18px;">${label}</span>
+                                 ${effect}`;
+            });
+        }
+
+        function handleVNDecision(optIndex) {
+            let opt = state.vnCurrentScenario.options[optIndex];
+            let density = cityData[state.pendingCity].density;
+            let pm = state.actions.pm;
+            let pmLocal = pm * 2;
+            let pmAll = pm * 1;
+            let logMsg = "";
+
+            if (optIndex === 0) { 
+                let cost = state.vnCurrentCost1;
+                if (state.budget >= cost) {
+                    state.budget = Number(state.budget) - cost;
+                    modifyRegionBuyIn(density, 10 + pmLocal);
+                    state.pmBonusEarned += pmLocal;
+                    logMsg = `You spent $${cost.toLocaleString()} to resolve the issue. The local community appreciated the investment. <span style="color: #00FF00;">(${density} Buy-In increased by ${10 + pmLocal})</span>`;
+                } else {
+                    modifyRegionBuyIn(density, -2); 
+                    logMsg = `You attempted to spend funds you didn't have! The situation degraded. <span style="color: #FF5555;">(${density} Buy-In decreased by 2)</span>`;
+                }
+            } else if (optIndex === 1) { 
+                let cost = state.vnCurrentCost2;
+                if (state.budget >= cost) {
+                    state.budget = Number(state.budget) - cost;
+                    ["Urban", "Suburban", "Rural", "Frontier"].forEach(r => modifyRegionBuyIn(r, 2 + pmAll));
+                    state.pmBonusEarned += pmAll * 4;
+                    logMsg = `You compensated the CBO $${cost.toLocaleString()} to lead the solution. <span style="color: #00FF00;">(Buy-In increased by ${2 + pmAll} across ALL area types)</span>`;
+                } else {
+                    modifyRegionBuyIn(density, -2);
+                    logMsg = `You tried to rely on the CBO but couldn't afford their fee! <span style="color: #FF5555;">(${density} Buy-In decreased by 2)</span>`;
+                }
+            } else { 
+                state.budget = Number(state.budget) + 1000;
+                ["Urban", "Suburban", "Rural", "Frontier"].forEach(r => modifyRegionBuyIn(r, -5));
+                logMsg = `You shamelessly squeezed the community for cash. Your budget increased by $1,000, but trust plummeted. <span style="color: #FF5555;">(Buy-In decreased by 5 across ALL area types)</span>`;
+            }
+
+            logMessage(`<span style="color: yellow;">Town Hall Action ${state.vnDecisionIndex + 1}/3: "${opt.text}"</span>`);
+            logMessage(`> ${logMsg}`);
+            state.vnDecisionIndex++;
+
+            if (state.vnDecisionIndex === 3) {
+                endTownHall();
+            } else {
+                if (state.vnDecisionIndex === 1) {
+                    if (state.vnPresBag.length === 0) reshuffleTownHallBags("pres");
+                    state.vnCurrentScenario = state.vnPresBag.pop();
+                } else if (state.vnDecisionIndex === 2) {
+                    if (state.vnQABag.length === 0) reshuffleTownHallBags("qa");
+                    state.vnCurrentScenario = state.vnQABag.pop();
+                }
+                presentVNScene(state.vnCurrentScenario);
+            }
+        }
+
+        function endTownHall() {
+            document.getElementById("vn-modal").style.display = "none";
+            let city = state.pendingCity;
+            
+            let epiBonus = 0; let bonusIndex = state.activeEpiBonuses.findIndex(b => b.city === city && b.activity === "town_hall");
+            if (bonusIndex > -1) { epiBonus = 10; state.epiYTDBonus += epiBonus; state.activeEpiBonuses.splice(bonusIndex, 1); }
+            if (epiBonus > 0) { 
+                let density = cityData[city].density;
+                modifyRegionBuyIn(density, epiBonus);
+                logMessage(`<span style="color: #00FF00;">(Data driven decision bonus: +${epiBonus} ${density} Buy-In)</span>`);
+            }
+            
+            logMessage(`Town Hall successfully concluded.`);
+
+            state.pendingActivity = null; state.pendingCity = null; state.vnCurrentScenario = null;
+            updateStats(); 
+            finishTurn();
+        }
+
+        // --- CORE LOGIC ---
+        function updateDeployCostDisplay() {
+            if (state.isGameOver || state.budget === 0) return;
+            let city = document.getElementById("city-select").value; let activity = document.getElementById("activity-select").value;
+            let roundTrip = cityData[city].dist * 4; let costPerMile = Math.max(1.00, 2.50 - (state.efficiencyProtocols * 0.05)); let fuelCost = Math.floor(roundTrip * costPerMile);
+            let actCost = activity === "town_hall" ? 1500 : activity === "direct_service" ? 1000 : 400; let totalCost = fuelCost + actCost;
+            document.getElementById("btn-travel").innerText = `Deploy Van ($${totalCost.toLocaleString()})`;
+        }
+
+        function startGame(selectedProgram) {
+            state.program = selectedProgram || state.program; 
+            document.getElementById("program-name-display").innerText = state.program;
+            let startBuyIn = 50; state.budget = 50000; state.burnRate = 1600; state.strategicAlignment = 50; state.alignmentDecay = 4; state.alignmentBoost = 30; state.programEffectiveness = 50; state.effDecay = 4; state.effBoost = 20; state.buyInDecay = 2; state.effPenalty = 5; state.mgSpeedMult = 1.0; state.mgSpawnMult = 1.0;
+            state.regionalBuyIn = { "Urban": startBuyIn, "Suburban": startBuyIn, "Rural": startBuyIn, "Frontier": startBuyIn }; state.startingBurnRate = state.burnRate;
+            
+            reshuffleTownHallBags("setup");
+            reshuffleTownHallBags("pres");
+            reshuffleTownHallBags("qa");
+            
+            document.getElementById("instructions-screen").style.display = "none";
+            document.getElementById("main-game").style.display = "flex";
+            
+            logHeader(`BUDGET APPROVED: ${state.program.toUpperCase()}`, "#00FF00"); logMessage(`Your program is active. Utilize ODU to build strategy and efficiency.`); logMessage(`All deployments launch from Oregon City.`); logMessage(`Select a destination and activity, then press "Deploy Van".`);
+            
+            updateStats();
+        }
+
+        function resolveTravel() {
+            state.traveling = false;
+            let activity = state.pendingActivity;
+            let city = state.pendingCity;
+            
+            state.currentLocation = city;
+            state.currentDensity = city === "PSB" ? "PSB" : cityData[city].density;
+            document.getElementById("location-display").innerText = `Location: ${state.currentLocation}`;
+            
+            document.querySelectorAll(".game-btn, .game-select").forEach(el => el.disabled = false);
+
+            if (city === "PSB") {
+                state.actions[activity]++; 
+                let serviceName = activity === "epi" ? "ANALYZE DATA (EPIS)" : activity === "pm" ? "PM / QI" : "STRATEGIC ALIGNMENT"; 
+                logMessage(`Arrived at PSB. ODU ${serviceName} ENGAGED!`);
+                if (activity === "epi") { 
+                    let cities = Object.keys(cityData); for (let i = cities.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [cities[i], cities[j]] = [cities[j], cities[i]]; } let c1 = cities[0]; let c2 = cities[1]; let c3 = cities[2]; let expirationTurn = state.turn + 2; 
+                    state.activeEpiBonuses.push({city: c1, activity: "town_hall", bonus: 10, expiresAt: expirationTurn}); state.activeEpiBonuses.push({city: c2, activity: "direct_service", bonus: 10, expiresAt: expirationTurn}); state.activeEpiBonuses.push({city: c3, activity: "cbo_meet", bonus: 10, expiresAt: expirationTurn}); 
+                    let narratives = ["The EPIs completed a Community Health Needs Assessment!", "The EPIs analyzed real-time syndromic surveillance data!", "The EPIs conducted a regional health equity evaluation!"]; logMessage(`<span style="color: #00FF00;">${narratives[Math.floor(Math.random() * narratives.length)]}</span>`); logMessage(`EPI Findings: Within the next 2 rounds, engagement below provides a statistically significant +10 buy-in bonus to the local area.`); logMessage(`-> Town Hall in ${c1} (${cityData[c1].density})`); logMessage(`-> Direct Service in ${c2} (${cityData[c2].density})`); logMessage(`-> Meet with CBOs in ${c3} (${cityData[c3].density})`);
+                } else if (activity === "pm") { 
+                    let savings = Math.floor(state.burnRate * 0.20); state.burnRate -= savings; state.efficiencyProtocols += 2; 
+                    let narratives = ["PDCA cycle streamlined operations.", "Root cause analysis identified structural inefficiencies.", "Process mapping ensures service consistency."]; logMessage(`<span style="color: #00FF00;"> ${narratives[Math.floor(Math.random() * narratives.length)]} Overhead per round permanently decreased by $${savings}!</span>`);
+                } else if (activity === "strat") { 
+                    state.strategicAlignment += state.alignmentBoost; if (state.strategicAlignment > 100) state.strategicAlignment = 100; state.elizabethUsedThisTurn = true; 
+                    let narratives = ["overarching Strategic Plan.", "community-wide CHIP.", "division's specific strategic goals."]; logMessage(`<span style="color: #00FF00;"> Worked to better align the program with ${narratives[Math.floor(Math.random() * narratives.length)]} Alignment increased by ${state.alignmentBoost}%!</span>`);
+                }
+                state.pendingActivity = null; state.pendingCity = null;
+                finishTurn();
+            } else {
+                state.actions[activity]++; state.cityVisits[city]++; state.densityVisits[state.currentDensity]++; state.communityEngagedThisTurn = true; 
+                if (activity === "direct_service") state.directServiceThisTurn = true;
+
+                if (activity === "direct_service" || activity === "cbo_meet") {
+                    modifyRegionBuyIn(state.currentDensity, 5);
+                    logMessage(`<span style="color:#00FF00">Base Deployment: +5 ${state.currentDensity} Buy-In.</span>`);
+                }
+
+                if (activity === "town_hall") {
+                    prepareTownHallInstructions(city);
+                } else {
+                    prepareMinigame();
+                }
+            }
+        }
+
+        function deployVan() {
+            if (state.isGameOver) return;
+            let city = document.getElementById("city-select").value; let activity = document.getElementById("activity-select").value;
+            if (isNaN(state.budget)) return logMessage(`<span style="color: red;">Error: Budget NaN loop detected. Refactoring core number parsing logic.</span>`);
+            
+            let roundTrip = cityData[city].dist * 4; let costPerMile = Math.max(1.00, 2.50 - (state.efficiencyProtocols * 0.05)); let fuelCost = Math.floor(roundTrip * costPerMile);
+            let actCost = activity === "town_hall" ? 1500 : activity === "direct_service" ? 1000 : 400; let totalCost = fuelCost + actCost;
+            
+            if (state.budget < totalCost) return logMessage(`<span style="color: red;">Insufficient funds to travel to ${city} and perform action (Total: $${totalCost.toLocaleString()}).</span>`);
+
+            state.budget = Number(state.budget) - totalCost; 
+            state.miles += roundTrip;
+
+            logHeader(`ROUND ${state.turn} DEPLOYMENT: ${activity.toUpperCase()} IN ${city.toUpperCase()}`, "#FFAA00"); logMessage(`Traveled ${roundTrip} miles round-trip over 2 weeks. paid $${totalCost.toLocaleString()} total.`);
+            
+            if (state.miles - state.lastMaintenanceMile >= 100) {
+                triggerMaintenance();
+                state.lastMaintenanceMile = Math.floor(state.miles / 100) * 100;
+            }
+
+            state.previousDensity = state.currentDensity;
+            state.pendingActivity = activity;
+            state.pendingCity = city;
+            state.traveling = true;
+            state.travelPhase = 1;
+            state.travelTimer = 0;
+            document.getElementById("location-display").innerText = `Traveling to: ${city}...`;
+            document.querySelectorAll(".game-btn, .game-select").forEach(el => el.disabled = true);
+        }
+
+        function engageODU() {
+            if (state.isGameOver) return; if (state.budget < 3000) return logMessage(`<span style="color: red;">Insufficient funds. ODU services require a $3K allocation.</span>`);
+            let service = document.getElementById("odu-select").value; state.budget = Number(state.budget) - 3000; 
+            
+            logHeader(`ROUND ${state.turn} ADMIN: ODU ENGAGED`, "#AA55FF"); logMessage(`Allocated $3,000 for ODU Services.`);
+            
+            state.previousDensity = state.currentDensity;
+            state.pendingActivity = service;
+            state.pendingCity = "PSB";
+            state.traveling = true;
+            state.travelPhase = 1;
+            state.travelTimer = 0;
+            document.getElementById("location-display").innerText = `Traveling to: PSB...`;
+            document.querySelectorAll(".game-btn, .game-select").forEach(el => el.disabled = true);
+        }
+
+        function applyMinigameRewards(type, score, city) {
+            let density = cityData[city].density;
+            let epiBonus = 0; let actName = type === "cbo" ? "cbo_meet" : "direct_service"; let bonusIndex = state.activeEpiBonuses.findIndex(b => b.city === city && b.activity === actName);
+            if (bonusIndex > -1) { epiBonus = 10; state.epiYTDBonus += epiBonus; state.activeEpiBonuses.splice(bonusIndex, 1); }
+            let outcomeLogs = [];
+
+            if (type === "cbo" || type === "ds_normal" || type === "ds_hard" || type === "ds_extreme") {
+                let localBonus = Math.min(5, Math.round((Math.min(score, 15) / 15) * 5));
+                if (localBonus > 0) {
+                    modifyRegionBuyIn(density, localBonus);
+                    outcomeLogs.push(`<span style="color:#00FF00;">(Performance Bonus: +${localBonus} ${density} Buy-In)</span>`);
+                }
+            }
+
+            if (type === "cbo") {
+                state.strategicAlignment += score;
+                if (state.strategicAlignment > 100) state.strategicAlignment = 100;
+                let narrativeMsg = score >= 12 ? "You dominated the networking session and made tons of connections!" : (score > 0 ? "You made a few solid connections at the meeting." : "Your networking attempt was awkward and you alienated folks.");
+                outcomeLogs.push(`Action Outcome: ${narrativeMsg}`); let color = score >= 0 ? "#00FF00" : "#FF5555"; let direction = score >= 0 ? "increased" : "decreased";
+                if (score !== 0) outcomeLogs.push(`<span style="color: ${color};">(Strategic Alignment ${direction} by ${Math.abs(score)}%)</span>`);
+            } else {
+                state.programEffectiveness += score; if (state.programEffectiveness > 100) state.programEffectiveness = 100;
+                let narratives = ["Provided much-needed resources to the local community.", "The locals appreciated the mobile van's visibility.", "Direct health interventions successfully delivered."];
+                outcomeLogs.push(`Action Outcome: ${narratives[Math.floor(Math.random() * narratives.length)]}`);
+                if (score !== 0) { let dirStr = score > 0 ? "increased" : "decreased"; let colStr = score > 0 ? "#00FF00" : "#FF5555"; outcomeLogs.push(`<span style="color: ${colStr};">(Program Effectiveness ${dirStr} by ${Math.abs(score)}%)</span>`); }
+            }
+
+            if (epiBonus > 0) { modifyRegionBuyIn(density, epiBonus); outcomeLogs.push(`<span style="color: #00FF00;">(Data driven decision bonus: +${epiBonus} ${density} Buy-In)</span>`); }
+            logMessage(outcomeLogs.join(" "));
+        }
+
+        function finishTurn() {
+            let completedTurn = state.turn; state.turn++; state.budget = Number(state.budget) - Number(state.burnRate); 
+            if (state.startingBurnRate - state.burnRate > 0) state.pmYtdSavings += (state.startingBurnRate - state.burnRate);
+            if (!state.elizabethUsedThisTurn) { state.strategicAlignment -= state.alignmentDecay; if (state.strategicAlignment < 0) state.strategicAlignment = 0; }
+            if (!state.communityEngagedThisTurn) { ["Urban", "Suburban", "Rural", "Frontier"].forEach(r => modifyRegionBuyIn(r, -state.buyInDecay)); }
+            if (!state.directServiceThisTurn) { state.programEffectiveness -= state.effDecay; if (state.programEffectiveness < 0) state.programEffectiveness = 0; }
+            state.elizabethUsedThisTurn = false; state.communityEngagedThisTurn = false; state.directServiceThisTurn = false;
+            let beforeCount = state.activeEpiBonuses.length; state.activeEpiBonuses = state.activeEpiBonuses.filter(b => b.expiresAt >= state.turn); if (state.activeEpiBonuses.length < beforeCount) logMessage(`<span style="color: #FFFF00;">Notice: The 2-round window for the EPI findings data has expired. Engage the EPIs again to make data driven decisions.</span>`);
+            
+            if (completedTurn === 24) triggerAnnualEvaluation(); else if (completedTurn % 4 === 0) triggerPerformanceCheck();
+            updateStats(); if (completedTurn !== 24) checkWinLossConditions();
+        }
+
+        function triggerMaintenance() {
+            let issues = [ { msg: "Flat tire on a rural gravel road.", cost: 350 }, { msg: "Brake pads completely worn down.", cost: 800 }, { msg: "Transmission slipping. Major repair required.", cost: 2000 } ]; let issue = issues[Math.floor(Math.random() * issues.length)];
+            logHeader(`VEHICLE MAINTENANCE REQUIRED`, "#FF5555"); logMessage(`Van hit a mileage threshold. ${issue.msg}`); logMessage(`Your program paid $${issue.cost.toLocaleString()} from the budget to repair it.`); state.budget -= issue.cost;
+        }
+
+        function triggerPerformanceCheck() {
+            logHeader(`BI-MONTHLY PERFORMANCE MANAGEMENT CHECK`, "#00FFFF"); logMessage(`Reviewing the workplan, KPIs, and current metrics over the last 8 weeks.`); logMessage(`Remaining budget: $${state.budget.toLocaleString()}`); logMessage(`Current overhead: $${state.burnRate.toLocaleString()}/rnd`); logMessage(`Miles traveled: ${state.miles}`); logMessage(`Program Effectiveness is ${state.programEffectiveness}%.`);
+            let masterBuyIn = getMasterBuyIn(); logMessage(`Overall Buy-in level is ${masterBuyIn}.`);
+            if (masterBuyIn < 60) { state.programEffectiveness -= state.effPenalty; if (state.programEffectiveness < 0) state.programEffectiveness = 0; logMessage(`<span style="color: red;">POOR PERFORMANCE: Program review flagged low community trust.</span> <span style="color: #FF5555;">(Program Effectiveness decreased by ${state.effPenalty}%)</span>`); }
+
+            let alignMsg = ""; let fundingBonus = 0;
+            if (state.strategicAlignment >= 85) { fundingBonus = 10000; state.maxAlignmentBonuses++; alignMsg = `<span style="color: #00FF00;">EXCELLENT ALIGNMENT: Strategic Alignment is High (${state.strategicAlignment}%). Bonus budget awarded: $10,000!</span>`; } 
+            else if (state.strategicAlignment >= 60) { fundingBonus = 5000; alignMsg = `<span style="color: #00FF00;">GOOD ALIGNMENT: Strategic Alignment is Medium (${state.strategicAlignment}%). Bonus budget awarded: $5,000!</span>`; } 
+            else { alignMsg = `<span style="color: red;">POOR ALIGNMENT: Strategic Alignment is critically low (${state.strategicAlignment}%). No extra budget awarded.</span>`; }
+            state.budget += fundingBonus; logMessage(alignMsg);
+        }
+
+        function triggerAnnualEvaluation() {
+            logHeader(`ANNUAL PROGRAM EVALUATION`, "#00FFFF"); logMessage(`Reviewing the workplan, KPIs, and all annual metrics to determine the program's future...`); logMessage(`Remaining budget: $${state.budget.toLocaleString()}`); logMessage(`Current overhead: $${state.burnRate.toLocaleString()}/rnd`); logMessage(`Total miles traveled: ${state.miles}`); logHeader(`ANNUAL ACTIVITY RECAP`, "#FFAA00"); logMessage(`Town Halls: ${state.actions.town_hall} | Direct Services: ${state.actions.direct_service} | CBO Meetings: ${state.actions.cbo_meet}`); logMessage(`ODU -> EPIs: ${state.actions.epi} | PM/QI: ${state.actions.pm} | Strat Align: ${state.actions.strat}`); logMessage(`Area Visits: Urban: ${state.densityVisits["Urban"]} | Suburban: ${state.densityVisits["Suburban"]} | Rural: ${state.densityVisits["Rural"]} | Frontier: ${state.densityVisits["Frontier"]}`); logHeader(`CRITICAL EVALUATION QUESTIONS`, "#FF00FF");
+
+            let nonZeroDensities = Object.values(state.densityVisits).filter(v => v > 0).length; let q1Pass = nonZeroDensities >= 3; let q2Pass = state.budget >= 5000; let q3Pass = state.programEffectiveness >= 80; let q4Pass = getMasterBuyIn() >= 80; let q5Pass = state.strategicAlignment >= 75;
+
+            logMessage(`1. Did the program reach the intended population? ${q1Pass ? `<span style="color: #00FFFF;">[YES] A wide spread of area types was engaged.</span>` : `<span style="color: red;">[NO] Engagement was too heavily concentrated in specific area types.</span>`}`); logMessage(`2. Was the program implemented efficiently? ${q2Pass ? `<span style="color: #00FFFF;">[YES] Finished with a healthy surplus of $${state.budget.toLocaleString()}.</span>` : `<span style="color: red;">[NO] Only $${state.budget.toLocaleString()} remained.</span>`}`); logMessage(`3. Is the program being delivered consistently and as planned? ${q3Pass ? `<span style="color: #00FFFF;">[YES] High effectiveness (${state.programEffectiveness}%).</span>` : `<span style="color: red;">[NO] Effectiveness was low (${state.programEffectiveness}%).</span>`}`); logMessage(`4. How satisfied were participants with the program services? ${q4Pass ? `<span style="color: #00FFFF;">[YES] Community buy-in is Championed (${getMasterBuyIn()}).</span>` : `<span style="color: red;">[NO] Buy-in was insufficient (${getMasterBuyIn()}).</span>`}`); logMessage(`5. Did the program help achieve the division's strategic goals? ${q5Pass ? `<span style="color: #00FFFF;">[YES] Strong strategic alignment (${state.strategicAlignment}%).</span>` : `<span style="color: red;">[NO] Alignment fell short (${state.strategicAlignment}%).</span>`}`);
+
+            let passedCount = [q1Pass, q2Pass, q3Pass, q4Pass, q5Pass].filter(Boolean).length; let basePass = passedCount >= 3; let objPass = true; let objText = "";
+
+            if (state.program === 'Youth Mental Health') { objPass = state.regionalBuyIn["Rural"] >= 80; let color = objPass ? "#00FFFF" : "red"; let status = objPass ? "[YES]" : "[NO]"; objText = `<br>Special Objective: Reach 'Championed' (80+) Buy-In in Rural areas.<br><span style="color: ${color};">${status} Rural Buy-In finished at ${state.regionalBuyIn["Rural"]}.</span>`; } 
+            else if (state.program === 'Harm Reduction') { objPass = state.maxAlignmentBonuses >= 3; let color = objPass ? "#00FFFF" : "red"; let status = objPass ? "[YES]" : "[NO]"; objText = `<br>Special Objective: Secure the maximum $10k Alignment Bonus at least 3 times.<br><span style="color: ${color};">${status} Secured ${state.maxAlignmentBonuses} times.</span>`; } 
+            else { objText = `<br>Special Objective: None. (Baseline Program)`; }
+            logMessage(objText);
+
+            if (basePass && objPass) { logHeader(`PROGRAM RENEWAL DETERMINATION - SUCCESS`, "#00FF00"); logMessage(`<span style="color: #00FF00;">PROGRAM RENEWED. Your program passed ${passedCount}/5 evaluation metrics and completed all special objectives. You successfully established the ${state.program} Program!</span>`); } 
+            else { logHeader(`PROGRAM RENEWAL DETERMINATION - FAILURE`, "#FF0000"); let failReason = !basePass ? `passed only ${passedCount}/5 evaluation metrics` : `failed your program's specific objective`; logMessage(`<span style="color: red;">PROGRAM DISCONTINUED. Your program ${failReason}. The ${state.program} Program will be discontinued next year.</span>`); }
+            endGame();
+        }
+
+        function getBuyInColor(val) { if (val >= 80) return "#00FF00"; if (val >= 50) return "#00FFFF"; if (val >= 20) return "#FFAA00"; return "#FF5555"; }
+
+        function updateStats() {
+            if (state.turn > 24) { document.getElementById("stat-turn").innerText = 24; document.getElementById("stat-weeks").innerText = "47-48"; } 
+            else { document.getElementById("stat-turn").innerText = state.turn; document.getElementById("stat-weeks").innerText = `${(state.turn * 2) - 1}-${state.turn * 2}`; } 
+            
+            document.getElementById("stat-budget").innerText = (state.budget || 0).toLocaleString();
+            
+            document.getElementById("stat-miles").innerText = state.miles; 
+            document.getElementById("stat-epi-count").innerText = state.actions.epi; 
+            document.getElementById("stat-epi-bonus").innerText = state.epiYTDBonus; 
+            document.getElementById("stat-pm-count").innerText = state.actions.pm; 
+            document.getElementById("stat-pm-bonus").innerText = state.pmBonusEarned; 
+            document.getElementById("stat-strat-count").innerText = state.actions.strat; 
+            document.getElementById("stat-strat-bonus").innerText = state.stratBonusEarned;
+            document.getElementById("stat-strategic").innerText = `${state.strategicAlignment}%`; 
+            document.getElementById("stat-strategic").style.color = state.strategicAlignment >= 85 ? "#00FF00" : state.strategicAlignment >= 60 ? "#FFFF00" : "#FF5555";
+            document.getElementById("stat-effectiveness").innerText = `${state.programEffectiveness}%`; 
+            document.getElementById("stat-effectiveness").style.color = state.programEffectiveness >= 80 ? "#00FF00" : state.programEffectiveness >= 50 ? "#FFFF00" : "#FF5555";
+            document.getElementById("stat-burnrate").innerText = (state.burnRate || 0).toLocaleString();
+            
+            let savings = state.startingBurnRate ? state.startingBurnRate - state.burnRate : 0;
+            document.getElementById("stat-odu-savings").innerText = savings.toLocaleString();
+            
+            let masterBuyIn = getMasterBuyIn(); 
+            let status = masterBuyIn >= 80 ? "Championed" : masterBuyIn >= 50 ? "Receptive" : masterBuyIn >= 20 ? "Skeptical" : "Hostile/Rejected"; 
+            let masterBiEl = document.getElementById("stat-buyin"); 
+            masterBiEl.innerText = `${masterBuyIn} (${status})`; 
+            masterBiEl.style.color = getBuyInColor(masterBuyIn); 
+            
+            ["Urban", "Suburban", "Rural", "Frontier"].forEach(d => { 
+                let val = state.regionalBuyIn[d]; 
+                let el = document.getElementById("stat-bi-" + d.substring(0,3).toLowerCase()); 
+                el.innerText = `${d}: ${val}`; 
+                el.style.color = getBuyInColor(val); 
+            }); 
+            
+            updateDeployCostDisplay(); 
+        }
+
+        function checkWinLossConditions() { if (getMasterBuyIn() <= 0) { logHeader(`CRITICAL FAILURE`, "#FF0000"); logMessage(`<span style="color: red;">Overall Community Buy-In reached 0. The program is dead in the water.</span>`); endGame(); } else if (Number(state.budget) < 0) { logHeader(`BANKRUPTCY`, "#FF0000"); logMessage(`<span style="color: red;">The budget is depleted. The van is recalled.</span>`); endGame(); } }
+        function endGame() { state.isGameOver = true; document.getElementById("controls").innerHTML = `<div style="width: 100%; display: flex; justify-content: center; align-items: center; padding: 10px;"><button class="play-again-btn" onclick="location.reload()">PLAY AGAIN</button></div>`; }
+    </script>
+</body>
+</html>
